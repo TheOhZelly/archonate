@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open your coding agent in a terminal (SUPER+A); --pick chooses one first
+# archonate:args=[--pick]
+. "$ARCHONATE_DIR/agents.sh"
+if [ "${1:-}" = --pick ]; then
+    exec "$ARCHONATE_DIR/cmd/agent-default" --pick --launch
+fi
+id=$(agent_default)
+[ -n "$id" ] || { notify "No coding agent installed" "Add one: archonate install ai"; echo "no coding agent installed (archonate install ai)" >&2; exit 1; }
+agent_launch "$id"

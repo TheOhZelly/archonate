@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Which Archonate commit you're running
+git -C "$HYPR_DIR" log -1 --format='archonate %h (%cd) %s' --date=short

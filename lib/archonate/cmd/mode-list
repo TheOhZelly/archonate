@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=List modes (* marks the active one)
+exec "$BIN/hypr-mode" --list

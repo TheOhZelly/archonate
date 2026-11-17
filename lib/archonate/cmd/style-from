@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Make a style from any image and wear it (no image: pick from Pictures/Downloads)
+# archonate:args=[image] [name]
+img=${1:-}
+if [ -z "$img" ]; then
+    # Recent images from the usual places, newest first
+    mapfile -t found < <(find "$HOME/Pictures" "$HOME/Downloads" "$HOME/Pictures/Wallpapers" -maxdepth 3 -type f \
+        \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' -o -iname '*.gif' \) \
+        -printf '%T@\t%p\n' 2>/dev/null | sort -rn | cut -f2 | awk '!s[$0]++' | head -60)
+    [ ${#found[@]} -gt 0 ] || { echo "no images in ~/Pictures or ~/Downloads; pass one: archonate style from <image>" >&2; exit 1; }
+    cfg="$HYPR_DIR/rices/$(current_rice)/fuzzel.ini"
+    img=$(printf '%s\n' "${found[@]}" | sed "s|^$HOME|~|" | fuzzel --dmenu ${cfg:+--config "$cfg"} --prompt "style from  " --width 60 --lines 14) || exit 0
+    img=${img/#\~/$HOME}
+fi
+[ -f "$img" ] || { echo "no such image: $img" >&2; exit 1; }
+name=$(python3 -I "$ARCHONATE_DIR/style-from-image.py" "$img" ${2:+"$2"}) || exit 1
+notify "New style: $name" "Made from $(basename "$img")"
+exec "$ARCHONATE_DIR/cmd/style-set" "$name"

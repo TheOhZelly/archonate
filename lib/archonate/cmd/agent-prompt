@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open your coding agent on a question
+# archonate:args=<question...>
+. "$ARCHONATE_DIR/agents.sh"
+[ -n "$*" ] || { echo "usage: archonate agent prompt <question...>" >&2; exit 1; }
+id=$(agent_default)
+[ -n "$id" ] || { echo "no coding agent installed (archonate install ai)" >&2; exit 1; }
+agent_launch "$id" "$*"

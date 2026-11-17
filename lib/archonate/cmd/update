@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Full system update the cachy-update way, with a snapshot first and a health check after
+# archonate:args=[--devel]
+# cachy-update (CachyOS's arch-update) does the update itself: the pending list
+# and a confirmation, the latest news, repos then AUR (paru or yay), and afterwards
+# orphans, the package cache, .pacnew/.pacsave files, a pending kernel reboot
+# and services needing a restart. Archonate wraps it: a labelled snapshot
+# before, your post-update hooks, archonate doctor and the bar's update badge after.
+# --devel also updates AUR -git packages (cachy-update --devel).
+
+# From the bar, menu or Settings there is no terminal for sudo, so open one
+if [ ! -t 0 ]; then
+    exec kitty --class archonate-term --title "Archonate update" -o confirm_os_window_close=0 "$BIN/archonate" update "$@"
+fi
+
+"$BIN/archonate" logo; echo
+sudo true || exit 1 # the password once, up front (the snapshot needs it too)
+"$BIN/archonate" snapshot create "before archonate update" || echo -e "\e[33mNo snapshot taken; carrying on.\e[0m"
+echo
+
+before=$(pacman -Q | md5sum)
+if command -v cachy-update >/dev/null; then
+    cachy-update ${1:+"$1"}
+    status=$?
+else
+    # not CachyOS (or cachy-update removed): the AUR helper, or plain pacman
+    if [ -n "$AUR_HELPER" ]; then
+        "$AUR_HELPER" -Syu
+    else
+        sudo pacman -Syu
+    fi
+    status=$?
+fi
+after=$(pacman -Q | md5sum)
+
+echo
+if [ "$before" != "$after" ]; then
+    python3 "$ARCHONATE_PY" hook post-update || true
+    echo -e "\e[1mChecking Archonate after the update…\e[0m"
+    "$BIN/archonate" doctor --quiet --notify || true
+    if [ ! -d "/usr/lib/modules/$(uname -r)" ]; then
+        notify -u normal "Updated" "Restart to finish: the kernel was replaced."
+    else
+        notify "Updated" "Everything is up to date."
+    fi
+elif [ $status -ne 0 ]; then
+    echo -e "\e[33mNothing was installed (exit $status).\e[0m"
+fi
+shell_ipc checkUpdates >/dev/null 2>&1 || true # refresh the bar's badge
+# Keep your coding agents' Archonate skills current (unless you turned them off)
+[ -f "$HOME/.config/archonate/agent-skills-off" ] || "$BIN/archonate" agent skills on >/dev/null 2>&1 || true
+echo; read -rsn1 -p "Done. Press any key to close."

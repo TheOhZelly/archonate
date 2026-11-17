@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Emoji and glyph picker (copies your choice)
+exec "$HYPR_DIR/lib/emoji.sh" "$(current_rice)"

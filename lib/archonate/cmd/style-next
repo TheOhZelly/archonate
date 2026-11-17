@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Next style (or previous with --back)
+# archonate:args=[--back]
+mapfile -t all < <(python3 "$ARCHONATE_PY" style-list | sed 's/^..//')
+cur=$("$ARCHONATE_DIR/cmd/style-current"); step=1; [ "${1:-}" = --back ] && step=-1
+for i in "${!all[@]}"; do [ "${all[$i]}" = "$cur" ] && break; done
+exec "$ARCHONATE_DIR/cmd/style-set" "${all[$(( (i + step + ${#all[@]}) % ${#all[@]} ))]}"

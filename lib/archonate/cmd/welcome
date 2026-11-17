@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Show the first-login welcome again (the cheat sheet with an intro)
+shell_ipc welcome

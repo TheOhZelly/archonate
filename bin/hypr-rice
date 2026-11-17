@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Switch the active Hyprland rice. No args lists rices; --pick opens a fuzzel menu.
+KIND=rice
+. "$HOME/.config/hypr/lib/switch.sh"
+switch_main "$@"

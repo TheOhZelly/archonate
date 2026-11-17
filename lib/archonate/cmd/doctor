@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Check everything Archonate needs and say what's broken (run after updates)
+# archonate:args=[--quiet] [--notify]
+# --quiet: only problems. --notify: a desktop notification if anything is wrong.
+# Exit status: 0 healthy, 1 warnings only, 2 something is broken.
+
+quiet=false notify_me=false
+for a in "$@"; do
+    case "$a" in --quiet) quiet=true ;; --notify) notify_me=true ;; esac
+done
+
+ok=0 warn=0 bad=0
+problems=()
+if [ -t 1 ]; then G=$'\e[32m' Y=$'\e[33m' R=$'\e[31m' D=$'\e[2m' B=$'\e[1m' N=$'\e[0m'; else G= Y= R= D= B= N=; fi
+
+section() { $quiet || printf '\n%s%s%s\n' "$B" "$1" "$N"; }
+pass() { ok=$((ok + 1)); $quiet || printf '  %s✓%s %s\n' "$G" "$N" "$1"; }
+warn() { warn=$((warn + 1)); problems+=("$1"); printf '  %s!%s %s%s\n' "$Y" "$N" "$1" "${2:+  ${D}→ $2${N}}"; }
+fail() { bad=$((bad + 1)); problems+=("$1"); printf '  %s✗%s %s%s\n' "$R" "$N" "$1" "${2:+  ${D}→ $2${N}}"; }
+
+$quiet || { "$BIN/archonate" logo 2>/dev/null | head -9; }
+
+# ---- tools -----------------------------------------------------------------
+section "Tools"
+need() { # command package [why]
+    if command -v "$1" >/dev/null; then pass "$1"; else fail "$1 is missing${3:+ ($3)}" "sudo pacman -S $2  (or paru -S $2)"; fi
+}
+need hyprctl hyprland
+need qs quickshell "every rice's desktop"
+need fuzzel fuzzel "launcher, menus"
+need kitty kitty
+need grim grim "screenshots, previews"
+need slurp slurp "region capture"
+need wl-copy wl-clipboard
+need cliphist cliphist "clipboard history"
+need tesseract tesseract "copy text from the screen"
+need ffmpeg ffmpeg "video wallpaper stills"
+need cava cava "archonate's visualizer"
+need jq jq
+need fzf fzf "install/remove search"
+[ -n "$AUR_HELPER" ] && pass "$AUR_HELPER (AUR)" || warn "no AUR helper: AUR installs and updates are skipped" "install paru or yay"
+need sass dart-sass "Discord theme"
+need notify-send libnotify
+need brightnessctl brightnessctl
+need gpu-screen-recorder gpu-screen-recorder "recording"
+need hyprsunset hyprsunset "night light"
+# apps that follow the rice are only checked when you have them
+if command -v spotify >/dev/null || command -v spotify-launcher >/dev/null; then
+    command -v spicetify >/dev/null && pass "spicetify" || warn "spicetify is missing (Spotify won't follow the rice)" "${AUR_HELPER:-paru} -S spicetify-bin"
+fi
+if pacman -Q claude-desktop-extra >/dev/null 2>&1; then { [ -f "$HOME/.config/Claude/themes.d/archonate.jsonc" ] && pass "Claude app follows the rice" || warn "Claude app has no rice theme yet" "archonate claude"; }
+elif command -v claude-desktop >/dev/null; then
+    warn "the Claude app can't follow the rice (official build)" "${AUR_HELPER:-paru} -S claude-desktop-extra"
+fi
+python3 -c "import PIL" 2>/dev/null && pass "python Pillow" || fail "python Pillow is missing (wallpapers, login, previews)" "sudo pacman -S python-pillow"
+if pacman -Q limine-snapper-sync >/dev/null 2>&1; then
+    command -v inotifywait >/dev/null && pass "inotify-tools (boot-menu snapshots)" || warn "inotify-tools missing: new snapshots won't reach the boot menu" "sudo pacman -S --asexplicit inotify-tools"
+fi
+
+# ---- fonts -----------------------------------------------------------------
+section "Fonts"
+font() { fc-list "$1" family | grep -q . && pass "$1" || fail "font '$1' is missing${3:+ ($3)}" "sudo pacman -S $2"; }
+font "Material Symbols Rounded" ttf-material-symbols-variable "every icon in bars and panels"
+font "JetBrainsMono Nerd Font" ttf-jetbrains-mono-nerd "archonate rice, menus, glyphs"
+font "Rubik" "ttf-rubik-vf (AUR)" "the login screen"
+font "Adwaita Sans" adwaita-fonts "Settings and the picker"
+font "Fira Sans Compressed" ttf-fira-sans "archonate's clock"
+
+# ---- links & state -----------------------------------------------------------
+section "Commands and links"
+for c in archonate hypr-rice hypr-mode; do
+    [ -x "$BIN/$c" ] && pass "~/.local/bin/$c" || fail "~/.local/bin/$c is missing" "run ~/.config/hypr/install.sh"
+done
+case ":$PATH:" in *":$BIN:"*) pass "~/.local/bin is on PATH" ;; *) warn "~/.local/bin isn't on PATH in this shell" "add path=(~/.local/bin \$path) to ~/.zshrc" ;; esac
+rice=$(current_rice) mode=$(current_mode)
+[ -f "$HYPR_DIR/rices/$rice/theme.lua" ] && pass "active rice: $rice" || fail "active rice link is broken ($rice)" "archonate theme set kyoto"
+[ -f "$HYPR_DIR/modes/$mode.lua" ] && pass "active mode: $mode" || fail "active mode link is broken ($mode)" "archonate mode set normal"
+for r in $(rice_names); do
+    for f in theme.lua desktop.json shell/shell.qml shell/Theme.qml shell/Bar.qml fuzzel.ini; do
+        [ -e "$HYPR_DIR/rices/$r/$f" ] || fail "rice $r is missing $f" "$( [ -f "$HYPR_DIR/rices/$r/look.json" ] && echo "archonate style set $("$ARCHONATE_DIR/cmd/style-current" "$r") $r" || echo 'restore it from git: git -C ~/.config/hypr checkout -- rices/'"$r")"
+    done
+    [ -e "$HYPR_DIR/rices/$r/shell/common/Desktop.qml" ] || fail "rice $r: shell/common link is broken" "ln -sfn ../../../qs-common ~/.config/hypr/rices/$r/shell/common"
+done
+pass "$(rice_names | wc -l) rices have all their files"
+grep -q '^include rice.conf' "$HOME/.config/kitty/kitty.conf" 2>/dev/null && pass "kitty follows the rice" || warn "kitty doesn't include rice.conf" "echo 'include rice.conf' >> ~/.config/kitty/kitty.conf"
+grep -q 'hypr-rice/p10k.zsh\|lib/prompt.zsh' "$HOME/.zshrc" 2>/dev/null && pass "zsh prompt follows the rice" || warn "the zsh prompt hook is missing" "run ~/.config/hypr/install.sh"
+
+# ---- config ------------------------------------------------------------------
+section "Hyprland"
+if command -v hyprctl >/dev/null && hyprctl version >/dev/null 2>&1; then
+    errs=$(hyprctl configerrors 2>/dev/null | sed '/^[[:space:]]*$/d')
+    [ -z "$errs" ] && pass "config loads with no errors" || fail "Hyprland config errors: $(echo "$errs" | head -2 | tr '\n' ' ')" "hyprctl configerrors"
+    pass "Hyprland $(hyprctl version -j 2>/dev/null | jq -r .version 2>/dev/null)"
+else
+    warn "not inside a Hyprland session; skipped live checks"
+fi
+lua_bad=$(for f in "$HYPR_DIR"/*.lua "$HYPR_DIR"/{hyprland,standalone,modes,lib,utils}/*.lua "$HYPR_DIR"/rices/*/theme.lua; do luac -p "$f" 2>&1 >/dev/null; done)
+[ -z "$lua_bad" ] && pass "every Lua file parses" || fail "Lua syntax: $(echo "$lua_bad" | head -1)"
+py_bad=$(python3 -c "import ast,sys; ast.parse(open(sys.argv[1]).read())" "$HYPR_DIR/lib/desktop.py" 2>&1 | tail -1)
+[ -z "$py_bad" ] && pass "desktop.py parses" || fail "desktop.py: $py_bad"
+sh_bad=$(for f in "$HYPR_DIR"/lib/*.sh "$ARCHONATE_DIR"/*.sh "$ARCHONATE_DIR"/cmd/*; do bash -n "$f" 2>&1; done)
+[ -z "$sh_bad" ] && pass "every script parses" || fail "script syntax: $(echo "$sh_bad" | head -1)"
+
+# ---- shells ------------------------------------------------------------------
+section "Desktop shells"
+# Qt 6's qmllint: the shells are Qt 6 QML. A plain `qmllint` on PATH can be
+# Qt 5's (qt5-declarative, pulled in by other apps), which rejects Qt 6 syntax.
+QMLLINT=""
+for c in /usr/lib/qt6/bin/qmllint qmllint6 qmllint-qt6 qmllint; do
+    c=$(command -v "$c" 2>/dev/null) || continue
+    "$c" --version 2>&1 | grep -q 'qmllint 6\|qmllint.* 6\.' && { QMLLINT=$c; break; }
+done
+if [ -n "$QMLLINT" ]; then
+    qml_bad=""
+    for d in "$HYPR_DIR"/qs-common "$HYPR_DIR"/rices/*/shell "$HYPR_DIR"/settings "$HYPR_DIR"/picker "$HYPR_DIR"/wallswitch "$HYPR_DIR"/cover; do
+        for f in "$d"/*.qml; do
+            out=$("$QMLLINT" "$f" 2>&1 | grep -E "^Error|: (S|s)yntax|Expected token")
+            [ -n "$out" ] && qml_bad+="${f#$HYPR_DIR/}: $(echo "$out" | head -1)"$'\n'
+        done
+    done
+    [ -z "$qml_bad" ] && pass "every QML file parses" || fail "QML syntax: $(echo "$qml_bad" | head -1)"
+else
+    warn "Qt 6's qmllint isn't installed, QML not checked" "sudo pacman -S qt6-declarative"
+fi
+shell="$HYPR_DIR/rices/$rice/shell"
+if qs -p "$shell" ipc show >/dev/null 2>&1; then
+    pass "$rice's shell is running and answers"
+    fns=$(qs -p "$shell" ipc show 2>/dev/null)
+    for fn in panel lock toggleCenter screensaver notifKeys menu; do
+        grep -q "function $fn(" <<<"$fns" || fail "$rice's shell has no '$fn' (IPC)" "archonate shell restart"
+    done
+    errs=$(qs log -p "$shell/shell.qml" 2>/dev/null | grep -E "ERROR|TypeError|ReferenceError|is not a type|unavailable|Cannot create delegate|was not initialized" | grep -v "dbus" | tail -3)
+    [ -z "$errs" ] && pass "no errors in $rice's shell log" || warn "errors in $rice's shell log: $(echo "$errs" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | cut -c1-110)" "qs log -p $shell/shell.qml"
+else
+    fail "$rice's desktop shell isn't running" "archonate shell restart"
+fi
+
+# ---- styles, login, snapshots, backup ---------------------------------------------
+section "Extras"
+if [ -f "$HOME/.config/archonate/agent-skills-off" ]; then
+    pass "coding-agent skills: off, as you chose"
+elif [ -L "$HOME/.local/share/archonate/skills/archonate/SKILL.md" ] || [ -f "$HOME/.local/share/archonate/skills/archonate/SKILL.md" ]; then
+    pass "coding agents know Archonate ($("$ARCHONATE_DIR/cmd/agent-skills" status | awk '$NF != "(none)" {n++} END {print n+0}') tool(s))"
+else
+    warn "coding agents haven't been taught Archonate yet" "archonate agent skills on"
+fi
+n=$(ls -d "$HOME"/.local/share/archonate/styles/*/style.json 2>/dev/null | wc -l)
+styled=$(python3 "$ARCHONATE_PY" styles | jq -r '.styled | join(", ")')
+[ "$n" -gt 0 ] && pass "$n imported styles (plus the shipped ones) for $styled" || warn "no omarchy styles imported yet ($styled only have the shipped ones)" "archonate style import"
+if [ -d /usr/share/sddm/themes/archonate ]; then
+    if diff -q "$HYPR_DIR/login/archonate/Main.qml" /usr/share/sddm/themes/archonate/Main.qml >/dev/null 2>&1; then
+        pass "login screen is up to date"
+    else
+        warn "login screen differs from the repo (changed since installed)" "sudo ~/.config/hypr/lib/setup-login.sh install"
+    fi
+    [ -r /var/lib/hypr-rice-login/theme.conf ] && pass "login screen follows the rice" || warn "login colours file missing" "switch rice once"
+fi
+if systemctl is-enabled limine-snapper-sync >/dev/null 2>&1; then
+    systemctl is-active limine-snapper-sync >/dev/null 2>&1 && pass "boot-menu snapshots are syncing" || warn "limine-snapper-sync isn't running" "sudo systemctl restart limine-snapper-sync"
+fi
+if git -C "$HYPR_DIR" rev-parse >/dev/null 2>&1; then
+    dirty=$(git -C "$HYPR_DIR" status --porcelain | wc -l)
+    [ "$dirty" -eq 0 ] && pass "no uncommitted changes" || warn "$dirty uncommitted change(s) in ~/.config/hypr" "git -C ~/.config/hypr status"
+    if git -C "$HYPR_DIR" remote get-url origin >/dev/null 2>&1; then
+        git -C "$HYPR_DIR" fetch -q origin 2>/dev/null
+        ahead=$(git -C "$HYPR_DIR" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)
+        [ "$ahead" -eq 0 ] && pass "backed up to GitHub" || warn "$ahead commit(s) not pushed to GitHub" "git -C ~/.config/hypr push"
+    else
+        warn "no GitHub backup configured"
+    fi
+fi
+
+# ---- summary --------------------------------------------------------------------
+echo
+if [ $bad -gt 0 ]; then
+    printf '%s%s problem(s)%s, %s warning(s), %s fine.\n' "$R" "$bad" "$N" "$warn" "$ok"
+    status=2
+elif [ $warn -gt 0 ]; then
+    printf '%s%s warning(s)%s, everything else fine (%s checks).\n' "$Y" "$warn" "$N" "$ok"
+    status=1
+else
+    printf '%sAll good%s: %s checks passed.\n' "$G" "$N" "$ok"
+    status=0
+fi
+if $notify_me && [ $status -gt 0 ]; then
+    notify -u $([ $status -eq 2 ] && echo critical || echo normal) "archonate doctor: $((bad + warn)) issue(s)" "$(printf '%s\n' "${problems[@]}" | head -4)"$'\n'"Run: archonate doctor"
+fi
+exit $status

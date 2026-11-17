@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Flip a switch: nightlight dnd caffeine gaming widgets shader screensaver intros
+# archonate:args=<name> [on|off|status]
+[ -n "${1:-}" ] || { exec "$ARCHONATE_DIR/cmd/toggle-list"; }
+exec python3 "$ARCHONATE_PY" toggle "$1" "${2:-toggle}"

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Recent snapshots (needs snapper; boot one from the boot menu to roll back)
+command -v snapper >/dev/null || { echo "snapshots need snapper on a btrfs system (sudo pacman -S snapper)" >&2; exit 127; }
+sudo snapper -c root list | tail -n 15

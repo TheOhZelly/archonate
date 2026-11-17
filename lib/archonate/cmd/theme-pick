@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open (or close) the visual rice picker
+qs -p "$HYPR_DIR/picker" kill >/dev/null 2>&1 || exec qs -p "$HYPR_DIR/picker"

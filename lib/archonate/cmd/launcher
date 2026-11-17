@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The app launcher, in this rice's style (press again to close)
+pkill -x fuzzel && exit 0
+exec fuzzel --config "$HYPR_DIR/rices/$(current_rice)/fuzzel.ini"

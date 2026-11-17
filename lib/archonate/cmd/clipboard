@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Clipboard history: pick to copy; 'delete' to forget one; 'wipe' to forget everything (SUPER+CTRL+SHIFT+V)
+# archonate:args=[delete|wipe]
+case "${1:-}" in
+    wipe)
+        n=$(cliphist list 2>/dev/null | wc -l)
+        cliphist wipe 2>/dev/null
+        # what's copied right now too (both clipboards), not just the history
+        wl-copy --clear 2>/dev/null
+        wl-copy --primary --clear 2>/dev/null
+        notify -u low "Clipboard wiped" "Forgot $n item(s) and whatever was copied."
+        echo "clipboard wiped ($n items)"
+        exit 0
+        ;;
+esac
+pkill -x fuzzel && exit 0
+cfg="$HYPR_DIR/rices/$(current_rice)/fuzzel.ini"
+if [ "${1:-}" = delete ]; then
+    cliphist list | fuzzel --dmenu --config "$cfg" --prompt "forget  " | cliphist delete
+else
+    cliphist list | fuzzel --dmenu --config "$cfg" --prompt "clipboard  " | cliphist decode | wl-copy
+fi

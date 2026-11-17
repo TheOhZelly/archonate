@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=List rices (* marks the active one)
+exec "$BIN/hypr-rice" --list

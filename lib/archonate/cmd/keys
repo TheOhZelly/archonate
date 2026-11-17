@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The keyboard cheat sheet (SUPER + /): every shortcut, grouped; press again to close
+shell_ipc keys 2>/dev/null || exec "$ARCHONATE_DIR/menu.sh" keys

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open (or close) the wallpaper switcher for this rice
+qs -p "$HYPR_DIR/wallswitch" kill >/dev/null 2>&1 || exec qs -p "$HYPR_DIR/wallswitch" -d

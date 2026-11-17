@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The Archonate menu (SUPER+Escape): everything, searchable; or jump to a section
+# archonate:args=[rice|style|mode|wallpaper|toggles|capture|panels|settings|keys|install|remove|update|power] [--fuzzel]
+# Drawn by the rice's shell; --fuzzel (or a shell that doesn't answer) uses the fuzzel version.
+if [ "${1:-}" = --fuzzel ] || [ "${2:-}" = --fuzzel ]; then
+    exec "$ARCHONATE_DIR/menu.sh" "${1/--fuzzel/}"
+fi
+shell_ipc menu "${1:-}" 2>/dev/null || exec "$ARCHONATE_DIR/menu.sh" "${1:-}"

@@ -1,0 +1,19 @@
+-- Your own overrides. Copy to user.lua (the installer does this once).
+-- Loaded last for every rice (standalone/init.lua), so anything set here wins,
+-- and git ignores user.lua, so updates never touch it.
+
+-- A second keyboard layout, toggled with SUPER + Space:
+-- hl.config({
+--     input = {
+--         kb_layout  = "us,de",
+--         kb_options = "grp:win_space_toggle",
+--     },
+-- })
+
+-- Your own keys:
+-- hl.bind("SUPER + B", hl.dsp.exec_cmd("blender"))
+
+-- Something to start with the session:
+-- hl.on("hyprland.start", function()
+--     hl.exec_cmd("nextcloud --background")
+-- end)

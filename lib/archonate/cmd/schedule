@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Day/night rices: show the schedule (set it in Settings > Day & night)
+python3 "$ARCHONATE_PY" schedule | python3 -c '
+import json, sys
+s = json.load(sys.stdin)
+if not s["enabled"]:
+    print("off (Settings > Day & night)"); raise SystemExit
+fmt = lambda p: (s.get(p) or {}).get("rice", "?") + ((" / " + s[p]["style"]) if (s.get(p) or {}).get("style") and s[p].get("rice") == "archonate" else "")
+print("now:", s["period"]); print("day:  ", fmt("day")); print("night:", fmt("night"))
+print("times: follows night light" if s.get("followNightlight", True) else "times: " + s.get("dayFrom", "07:00") + " / " + s.get("nightFrom", "20:00"))'

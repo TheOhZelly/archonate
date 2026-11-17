@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Change a setting the way the Settings app does (the active rice's, or --global); applies live
+# archonate:args=<key> <value> [--global | --rice <rice>]
+# Values are JSON: true, 12, "bottom-left". A bare word is taken as a string.
+key=${1:?usage: archonate settings set <key> <value> [--global | --rice <rice>]}
+val=${2:?usage: archonate settings set <key> <value> [--global | --rice <rice>]}
+shift 2
+scope=$(current_rice)
+case "${1:-}" in
+    --global) scope=global ;;
+    --rice) scope=${2:?--rice needs a rice name} ;;
+esac
+jq . >/dev/null 2>&1 <<<"$val" || val=$(jq -Rn --arg v "$val" '$v')
+python3 "$ARCHONATE_PY" set "$scope" "$key" "$val" && echo "$scope.$key = $val"

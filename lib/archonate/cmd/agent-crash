@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Have your coding agent find out why a program crashed (from a crash notification, or a PID from coredumpctl list)
+# archonate:args=<pid>
+. "$ARCHONATE_DIR/agents.sh"
+pid=${1:?usage: archonate agent crash <pid>   (see: coredumpctl list)}
+[[ $pid =~ ^[0-9]+$ ]] || { echo "not a PID: $pid" >&2; exit 1; }
+id=$(agent_default)
+[ -n "$id" ] || { notify "No coding agent installed" "Add one: archonate install ai"; exit 1; }
+facts=$(coredumpctl info "$pid" --no-pager 2>/dev/null | sed -n '1,/Stack trace/p' | grep -E '^ *(PID|UID|Signal|Timestamp|Command Line|Executable|Storage|Package):' | sed 's/^ *//')
+agent_launch "$id" "A program crashed on my Archonate desktop (Hyprland on Arch/CachyOS) and I want to know why. systemd-coredump recorded it as PID $pid:
+${facts:-(coredumpctl has no details; it may have rotated away)}
+
+Use the archonate-diagnose-crash skill if you have it. Find the cause from the evidence (coredumpctl info $pid, its stack trace, the journal around that time, package versions), tell me in plain words what happened, whose bug it is (the program, a library, Archonate's config, or my setup), and what to do: a fix, a workaround, or where to report it. Don't change or restart anything until I say so."

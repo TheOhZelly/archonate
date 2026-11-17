@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Fetch omarchy's latest themes and add the dark ones as styles
+# archonate:args=[--force]
+src="$HOME/.cache/archonate/omarchy"
+if [ -d "$src/.git" ]; then git -C "$src" pull -q --depth 1 || true
+else mkdir -p "${src%/*}" && git clone -q --depth 1 https://github.com/omacom/omarchy "$src"; fi
+[ -d "$src/themes" ] || { echo "couldn't download omarchy's themes (no network?); try again later" >&2; exit 1; }
+python3 -I "$ARCHONATE_DIR/import-omarchy.py" "$src" "$@"

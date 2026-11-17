@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Take a system snapshot (needs snapper; with limine-snapper-sync it's bootable from the boot menu)
+# archonate:args=[description]
+command -v snapper >/dev/null || { echo "snapshots need snapper on a btrfs system (sudo pacman -S snapper); skipped" >&2; exit 127; }
+desc=${1:-archonate $(date +%F_%H%M)}
+for c in $(snapper --csvout list-configs 2>/dev/null | awk -F, 'NR>1 {print $1}'); do
+    sudo snapper -c "$c" create -c number -d "$desc" && echo -e "\e[32mSnapshot of $c: $desc\e[0m"
+done

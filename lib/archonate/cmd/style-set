@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Dress a rice in a style (omarchy's themes and more); the active rice if it takes styles, else archonate
+# archonate:args=<style> [rice]
+[ -n "${1:-}" ] || { echo "usage: archonate style set <style> [rice]  (see: archonate style list)" >&2; exit 1; }
+rice=${2:-$(python3 "$ARCHONATE_PY" style-rice)}
+python3 "$ARCHONATE_PY" style "$1" "$rice" || exit 1
+[ "$(current_rice)" = "$rice" ] || exec "$BIN/hypr-rice" "$rice"

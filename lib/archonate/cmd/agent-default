@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Show or set the coding agent SUPER+A opens (claude, codex, opencode, gemini...); --pick for a menu
+# archonate:args=[<agent> | --pick]
+. "$ARCHONATE_DIR/agents.sh"
+launch=false
+[ "${2:-}" = --launch ] && launch=true
+if [ "${1:-}" = --pick ]; then
+    mapfile -t ids < <(agents_installed)
+    [ ${#ids[@]} -gt 0 ] || { notify "No coding agent installed" "Add one: archonate install ai"; exit 1; }
+    cur=$(agent_default)
+    cfg="$HYPR_DIR/rices/$(current_rice)/fuzzel.ini"
+    pick=$(for i in "${ids[@]}"; do printf '%s%s\t%s\n' "$(agent_field "$i" 3)" "$([ "$i" = "$cur" ] && echo '   ●')" "$i"; done |
+        fuzzel --dmenu ${cfg:+--config "$cfg"} --prompt "agent  " --with-nth 1 --accept-nth 2 --lines ${#ids[@]}) || exit 0
+    set -- "$pick"
+fi
+if [ -z "${1:-}" ]; then
+    id=$(agent_default)
+    [ -n "$id" ] && echo "$id ($(agent_field "$id" 3))" || echo "none installed (archonate install ai)"
+    exit 0
+fi
+name=$(agent_field "$1" 3) || { echo "unknown agent '$1'; known: $(printf '%s\n' "${AGENTS[@]}" | cut -d'|' -f1 | tr '\n' ' ')" >&2; exit 1; }
+command -v "$(agent_field "$1" 2)" >/dev/null || { echo "$name isn't installed (archonate install ai)" >&2; exit 1; }
+mkdir -p "${AGENT_FILE%/*}" && echo "$1" >"$AGENT_FILE"
+echo "agent: $1 ($name)"
+$launch && agent_launch "$1"
+exit 0

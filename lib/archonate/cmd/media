@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Media keys: toggle next prev stop (whatever is playing)
+# archonate:args=<toggle|next|prev|stop>
+shell_ipc media "${1:-toggle}"

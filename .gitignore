@@ -1,0 +1,27 @@
+scheme/current.lua
+hyprsunset.conf
+rices/archonate/desktop.json
+rices/archonate/fuzzel.ini
+rices/archonate/assets/wallpapers
+__pycache__/
+# yours, not the rice's: overrides and which rice/mode is on
+user.lua
+active-rice.lua
+active-mode.lua
+# notes for Claude Code sessions here, not part of the rice
+CLAUDE.local.md
+
+# graphify (local code map + its Claude hooks)
+graphify-out/
+.claude/
+CLAUDE.md
+
+# Archonate ships one rice, archonate. The older designs live on as local
+# spares only: they still work on a machine that has them, they're not shipped.
+rices/archonateold/
+rices/ashen/
+rices/cupertino/
+rices/kyoto/
+rices/mono/
+rices/outrun/
+lib/archonate/make-wallpapers.py

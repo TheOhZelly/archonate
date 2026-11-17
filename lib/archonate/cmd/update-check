@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=List what's waiting to update (and whether a restart is needed)
+show=$(cat <<'PY'
+import json, sys
+u = json.load(sys.stdin)
+for p in u["repo"] + u["aur"]:
+    tag = "  (aur)" if p.get("source") == "aur" else ""
+    print(f"  {p['name']:<32} {p['from']} -> {p['to']}{tag}")
+note = "; restart needed" if u.get("reboot") else ""
+print(f"{len(u['repo'])} from the repos, {len(u['aur'])} from the AUR{note}")
+PY
+)
+python3 "$ARCHONATE_PY" updates | python3 -c "$show"
+standalone && shell_ipc checkUpdates >/dev/null 2>&1 || true

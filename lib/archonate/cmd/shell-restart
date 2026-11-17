@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Restart this rice's desktop shell (bar, notifications, panels)
+qs -p "$HYPR_DIR/rices/$(current_rice)/shell" kill >/dev/null 2>&1
+sleep 0.1
+exec qs -p "$HYPR_DIR/rices/$(current_rice)/shell" -d

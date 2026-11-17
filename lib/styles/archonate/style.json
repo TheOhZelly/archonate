@@ -1,0 +1,38 @@
+{
+    "name": "archonate",
+    "title": "Archonate",
+    "palette": {
+        "bg": "141618",
+        "surface": "1d2023",
+        "surface_hi": "2d3135",
+        "text": "c8ccce",
+        "text_dim": "656c71",
+        "accent": "8fa4b2",
+        "secondary": "b3a68c",
+        "tertiary": "7f948a",
+        "error": "c2756e",
+        "muted": "33383c",
+        "selection": "262a2e",
+        "dark_bg": "0c0d0e"
+    },
+    "ansi": [
+        "1d2023",
+        "c2756e",
+        "8fa58a",
+        "c4b07f",
+        "7f9cb3",
+        "a48fb2",
+        "7fa3a3",
+        "c8ccce",
+        "4a5157",
+        "d38a83",
+        "a2b89d",
+        "d6c391",
+        "93b0c6",
+        "b7a3c4",
+        "93b7b7",
+        "e3e6e7"
+    ],
+    "folders": "grey",
+    "source": "archonate"
+}

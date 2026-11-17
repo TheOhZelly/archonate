@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Services that need a restart after an update (offers to restart them)
+exec cachy-update --services

@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Teach your coding agents Archonate: link its skills into Claude Code, Codex, OpenCode and the rest (on by default; off to remove)
+# archonate:args=[on | off | status]
+# The skills: "archonate" (how to drive this desktop, rebuilt from the commands
+# so it matches this version) and "archonate-diagnose-crash". They are linked,
+# not copied, into each agent tool you have (its config folder exists), so an
+# update reaches all of them. Only links Archonate made are ever replaced or
+# removed. 'off' also keeps updates and the installer from linking them again.
+built="$HOME/.local/share/archonate/skills"
+shipped="$ARCHONATE_DIR/ai/skills"
+off="$HOME/.config/archonate/agent-skills-off"
+# tool name | its folder (must exist) | where it reads skills
+tools=(
+    "Claude Code|$HOME/.claude|$HOME/.claude/skills"
+    "Codex|$HOME/.codex|$HOME/.codex/skills"
+    "OpenCode|$HOME/.config/opencode|$HOME/.config/opencode/skills"
+    "Gemini CLI|$HOME/.gemini|$HOME/.gemini/skills"
+    "GitHub Copilot CLI|$HOME/.copilot|$HOME/.copilot/skills"
+    "Kilo Code|$HOME/.config/kilo|$HOME/.config/kilo/skills"
+    "Factory Droid|$HOME/.factory|$HOME/.factory/skills"
+    "Kimi Code|$HOME/.kimi|$HOME/.kimi/skills"
+    "Pi|$HOME/.pi/agent|$HOME/.pi/agent/skills"
+    "Agent Skills (shared)|$HOME/.agents|$HOME/.agents/skills"
+)
+
+skills() { # name<TAB>source dir
+    printf 'archonate\t%s\n' "$built/archonate"
+    for d in "$shipped"/*/; do printf '%s\t%s\n' "$(basename "$d")" "${d%/}"; done
+}
+ours() { # is this path a link Archonate made?
+    [ -L "$1" ] && case "$(readlink "$1")" in "$built"/* | "$shipped"/*) return 0 ;; esac
+    return 1
+}
+
+case "${1:-on}" in
+on)
+    rm -f "$off"
+    python3 -I "$ARCHONATE_DIR/ai/build-skill.py" "$built" >/dev/null
+    taught=()
+    for t in "${tools[@]}"; do
+        IFS='|' read -r name home dir <<<"$t"
+        [ -d "$home" ] || continue
+        mkdir -p "$dir"
+        while IFS=$'\t' read -r skill src; do
+            dst="$dir/$skill"
+            if [ -e "$dst" ] && ! ours "$dst"; then
+                echo "  $name: left your own '$skill' skill alone ($dst)" >&2
+                continue
+            fi
+            ln -sfn "$src" "$dst"
+        done < <(skills)
+        taught+=("$name")
+    done
+    if [ ${#taught[@]} -gt 0 ]; then
+        echo "Taught $(printf '%s, ' "${taught[@]}" | sed 's/, $//') how to drive Archonate (undo: archonate agent skills off)"
+    else
+        echo "No coding agents found yet; their skills get linked once one is installed (archonate agent skills)"
+    fi
+    ;;
+off)
+    n=0
+    for t in "${tools[@]}"; do
+        IFS='|' read -r _ _ dir <<<"$t"
+        for l in "$dir"/*; do ours "$l" && rm "$l" && n=$((n + 1)); done
+    done
+    mkdir -p "${off%/*}" && touch "$off"
+    echo "Removed $n Archonate skill link(s); updates won't add them back (archonate agent skills on to undo)"
+    ;;
+status)
+    [ -f "$off" ] && echo "off (archonate agent skills on)"
+    for t in "${tools[@]}"; do
+        IFS='|' read -r name home dir <<<"$t"
+        [ -d "$home" ] || continue
+        have=$(for l in "$dir"/*; do ours "$l" && basename "$l"; done | tr '\n' ' ')
+        printf '  %-22s %s\n' "$name" "${have:-(none)}"
+    done
+    ;;
+*) echo "usage: archonate agent skills [on | off | status]" >&2; exit 1 ;;
+esac

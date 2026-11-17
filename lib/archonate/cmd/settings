@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open Settings (or close it), optionally at a page
+# archonate:args=[page]
+dir="$HYPR_DIR/settings"
+if [ -n "${1:-}" ]; then
+    page=$(echo "${1:0:1}" | tr a-z A-Z)${1:1}
+    [ -f "$dir/Page$page.qml" ] || { echo "no settings page '$1'; pages: $(ls "$dir" | sed -n 's/^Page\(.*\)\.qml$/\1/p' | tr '\n' ' ')" >&2; exit 1; }
+    qs -p "$dir" kill >/dev/null 2>&1
+    RICE_SETTINGS_PAGE=$page exec qs -p "$dir" -d
+fi
+qs -p "$dir" kill >/dev/null 2>&1 || exec qs -p "$dir" -d

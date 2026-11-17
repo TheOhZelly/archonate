@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Screenshot this rice for the picker (an empty workspace with fastfetch and btop)
+# archonate:args=[--all | --styles]
+# --all walks through every rice, captures each, and comes back to where you were.
+# --styles does the same for every style of the active rice (if it takes styles, else archonate).
+set -e
+out_dir="$HOME/.local/state/hypr-rice/previews"
+mkdir -p "$out_dir"
+
+capture() {
+    local rice ws prev mon pids=()
+    rice=$(current_rice)
+    prev=$(hyprctl -j activeworkspace | jq -r .name)
+    mon=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
+    # The first empty numbered workspace
+    for ws in 9 8 7 6 5 4 3 10; do
+        hyprctl -j workspaces | jq -e --arg w "$ws" 'any(.[]; .name == $w and .windows > 0)' >/dev/null || break
+    done
+    hyprctl dispatch "hl.dsp.focus({ workspace = \"$ws\" })" >/dev/null
+    sleep 0.3
+    # A rice with its own desktop widgets (theme ownWidgets) is shown with them:
+    # one fastfetch in the middle, the corners left to the widgets
+    own=0
+    grep -q "ownWidgets: true" "$HYPR_DIR/rices/$rice/shell/Theme.qml" 2>/dev/null && own=1
+    # Previews get published: fastfetch shows a neutral user and host, not yours
+    ffcfg=$(mktemp --suffix=.jsonc)
+    jq '(.modules[] | objects | select(.type == "command" and (.text == "echo $USER"))).text = "echo archonate"
+        | (.modules[] | objects | select(.type == "command" and (.text | test("hostname")))).text = "echo archonate"' \
+        "$HOME/.config/fastfetch/config.jsonc" >"$ffcfg" 2>/dev/null || cp "$HOME/.config/fastfetch/config.jsonc" "$ffcfg"
+    kitty --class archonate-preview-a -o confirm_os_window_close=0 sh -c "clear; fastfetch -c '$ffcfg'; sleep 60" &
+    pids+=($!)
+    sleep 0.5
+    if [ "$own" = 0 ]; then
+        kitty --class archonate-preview-b -o confirm_os_window_close=0 btop &
+        pids+=($!)
+    fi
+    sleep 1
+    # Place them explicitly; the window rules alone sometimes lose to the
+    # "centre floating windows" rule
+    read -r mx my mw mh < <(hyprctl -j monitors | jq -r '.[] | select(.focused) | "\(.x) \(.y) \(.width / .scale | floor) \(.height / .scale | floor)"')
+    place() { # class x y w h (fractions of the monitor)
+        local c=$1
+        hyprctl dispatch "hl.dsp.window.float({ action = \"enable\", window = \"class:$c\" })" >/dev/null 2>&1
+        hyprctl dispatch "hl.dsp.window.resize({ x = $(( mw * $4 / 100 )), y = $(( mh * $5 / 100 )), window = \"class:$c\" })" >/dev/null
+        hyprctl dispatch "hl.dsp.window.move({ x = $(( mx + mw * $2 / 100 )), y = $(( my + mh * $3 / 100 )), window = \"class:$c\" })" >/dev/null
+    }
+    if [ "$own" = 1 ]; then
+        place archonate-preview-a 32 34 36 38
+    else
+        place archonate-preview-a 5 12 40 42
+        place archonate-preview-b 51 43 44 50
+    fi
+    sleep 2 # animate in, draw
+    hyprctl dispatch 'function() hl.config({ cursor = { invisible = true } }) end' >/dev/null
+    sleep 0.1
+    grim -o "$mon" "$out_dir/$rice.png"
+    # A rice that wears styles: also one per style, for the picker's style row
+    [ -f "$HYPR_DIR/rices/$rice/look.json" ] && cp "$out_dir/$rice.png" "$out_dir/$rice-$("$ARCHONATE_DIR/cmd/style-current" "$rice").png"
+    hyprctl dispatch 'function() hl.config({ cursor = { invisible = false } }) end' >/dev/null
+    kill "${pids[@]}" 2>/dev/null || true
+    rm -f "$ffcfg"
+    sleep 0.4
+    hyprctl dispatch "hl.dsp.focus({ workspace = \"$prev\" })" >/dev/null
+    echo "preview: $out_dir/$rice.png"
+}
+
+# The widgets show in the shots; put the switch back as it was afterwards
+widgets_were=$(jq -r 'if has("widgets") then .widgets else true end' "$HOME/.local/state/hypr-rice/effects.json" 2>/dev/null || echo true)
+if [ "$widgets_were" = false ]; then
+    "$ARCHONATE_DIR/cmd/toggle" widgets on >/dev/null 2>&1 || true
+    trap '"$ARCHONATE_DIR/cmd/toggle" widgets off >/dev/null 2>&1 || true' EXIT
+    sleep 2.5 # let the "on" announcement fade
+fi
+
+if [ "${1:-}" = --all ]; then
+    export ARCHONATE_NO_SPOTIFY=1 # don't restart Spotify for every rice on the way
+    export ARCHONATE_QUIET=1      # and keep "Applied" notifications out of the shots
+    start=$(current_rice)
+    for r in $(rice_names); do
+        [ "$(current_rice)" = "$r" ] || "$BIN/hypr-rice" "$r" >/dev/null
+        sleep 5 # the cover lifts, the new shell and its apps settle
+        capture
+    done
+    [ "$(current_rice)" = "$start" ] || "$BIN/hypr-rice" "$start" >/dev/null
+elif [ "${1:-}" = --styles ]; then
+    export ARCHONATE_NO_SPOTIFY=1 ARCHONATE_QUIET=1
+    start_rice=$(current_rice) target=$(python3 "$ARCHONATE_PY" style-rice)
+    start_style=$("$ARCHONATE_DIR/cmd/style-current" "$target")
+    [ "$start_rice" = "$target" ] || { "$BIN/hypr-rice" "$target" >/dev/null; sleep 5; }
+    for st in $(python3 "$ARCHONATE_PY" style-list "$target" | sed 's/^..//'); do
+        python3 "$ARCHONATE_PY" style "$st" "$target" >/dev/null
+        sleep 2.5 # recolour, reload, new wallpaper
+        capture
+    done
+    python3 "$ARCHONATE_PY" style "$start_style" "$target" >/dev/null
+    [ "$start_rice" = "$target" ] || "$BIN/hypr-rice" "$start_rice" >/dev/null
+else
+    capture
+fi

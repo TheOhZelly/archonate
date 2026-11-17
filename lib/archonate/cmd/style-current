@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The style a rice is wearing (the active rice if it takes styles, else archonate)
+# archonate:args=[rice]
+exec python3 "$ARCHONATE_PY" style-current "$@"

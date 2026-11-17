@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Watch for crashed programs and offer to have your coding agent explain them (started at login)
+# archonate:hidden=true
+# Follows systemd-coredump in the journal. Each crash of one of your programs
+# gets a notification with "Ask AI"; the same program at most once per 10
+# minutes. At login it first mentions the last crash since the previous
+# session (a crashed compositor takes the session, and this watcher, with it).
+. "$ARCHONATE_DIR/agents.sh"
+state="$HOME/.local/state/hypr-rice/crash-seen"
+me=$(id -u)
+declare -A last=()
+
+offer() { # pid comm signal [when-text]
+    local pid=$1 comm=$2 sig=$3 when=${4:-}
+    [ -n "$(agent_default)" ] || return 0 # no agent, no button to offer
+    (
+        act=$(notify-send -a archonate -i dialog-warning -A "ask=Ask AI why" \
+            "$comm crashed${when:+ $when}" "Signal $sig. Your coding agent can read the crash report and say what happened.")
+        [ "$act" = ask ] && "$BIN/archonate" agent crash "$pid"
+    ) &
+}
+
+# The last crash since the previous session
+since=$(cat "$state" 2>/dev/null || echo "")
+if [ -n "$since" ]; then
+    line=$(coredumpctl list --since "@$since" --no-pager --no-legend 2>/dev/null | awk -v u="$me" '$6 == u' | tail -1)
+    if [ -n "$line" ]; then
+        read -r _ _ _ _ pid _ _ sig _ exe _ <<<"$line"
+        offer "$pid" "$(basename "$exe")" "$sig" "last session"
+    fi
+fi
+date +%s >"$state"
+
+journalctl -f -n 0 -o cat -t systemd-coredump 2>/dev/null | while read -r line; do
+    # "Process 1579 (Hyprland) of user 1000 terminated abnormally with signal 11/SEGV, processing..."
+    [[ $line =~ ^Process\ ([0-9]+)\ \((.*)\)\ of\ user\ ([0-9]+)\ terminated\ abnormally\ with\ signal\ ([0-9]+/[A-Z]+) ]] || continue
+    pid=${BASH_REMATCH[1]} comm=${BASH_REMATCH[2]} uid=${BASH_REMATCH[3]} sig=${BASH_REMATCH[4]}
+    [ "$uid" = "$me" ] || continue
+    now=$(date +%s)
+    (( now - ${last[$comm]:-0} < 600 )) && continue
+    last[$comm]=$now
+    date +%s >"$state"
+    sleep 2 # let coredumpctl finish writing it
+    offer "$pid" "$comm" "$sig"
+done

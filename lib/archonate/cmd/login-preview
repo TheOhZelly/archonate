@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Preview the ARCHONATE login screen in a window (needs sddm installed)
+command -v sddm-greeter-qt6 >/dev/null || { echo "install SDDM first: sudo pacman -S sddm" >&2; exit 1; }
+dir=$(mktemp -d)
+cp -L "$HYPR_DIR"/login/archonate/* "$dir"/
+cp /var/lib/hypr-rice-login/theme.conf "$dir/theme.conf.user" 2>/dev/null || true
+sddm-greeter-qt6 --test-mode --theme "$dir"
+rm -rf "$dir"

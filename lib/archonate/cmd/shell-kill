@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Stop this rice's desktop shell (archonate shell restart brings it back)
+exec qs -p "$HYPR_DIR/rices/$(current_rice)/shell" kill

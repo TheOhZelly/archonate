@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open your default browser, editor, file manager, terminal or sound mixer (the app keys use this)
+# archonate:args=<browser|editor|files|terminal|audio>
+# Follows Settings > Default apps (xdg defaults); if none is set, the first
+# of the usual ones that is installed.
+launch_default() { # <mime> <fallbacks...>
+    local mime=$1 id; shift
+    id=$(xdg-mime query default "$mime" 2>/dev/null)
+    if [ -n "$id" ] && command -v gtk-launch >/dev/null && setsid -f gtk-launch "${id%.desktop}" >/dev/null 2>&1; then return; fi
+    first_of "$@"
+}
+first_of() {
+    local c
+    for c in "$@"; do
+        command -v "${c%% *}" >/dev/null && { setsid -f $c >/dev/null 2>&1; return; }
+    done
+    notify-send "Archonate" "Nothing installed for that yet. Pick one in SUPER + Escape > Install, then Settings > Default apps."
+    return 1
+}
+case "${1:?usage: archonate open <browser|editor|files|terminal|audio>}" in
+    browser) launch_default x-scheme-handler/https firefox brave brave-origin chromium zen-browser librewolf ;;
+    editor) launch_default text/plain zeditor code codium kate gnome-text-editor "kitty nvim" "kitty nano" ;;
+    files) launch_default inode/directory thunar nautilus dolphin nemo pcmanfm ;;
+    terminal) first_of kitty foot alacritty ghostty wezterm ;;
+    audio) first_of pwvucontrol pavucontrol "archonate panel sound" ;;
+    *) echo "unknown: $1 (browser, editor, files, terminal, audio)" >&2; exit 1 ;;
+esac

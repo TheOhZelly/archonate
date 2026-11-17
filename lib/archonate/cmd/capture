@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Screenshot, record, or grab text (OCR): shot region text record record-sound record-region
+# archonate:args=<mode>
+exec "$HYPR_DIR/lib/capture.sh" "${1:-region}"

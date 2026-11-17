@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# archonate: one command for the whole desktop.
+#   archonate <noun> <verb> [args]     e.g. archonate theme set kyoto
+# Each command is a script in cmd/<noun>-<verb> (or cmd/<noun>) whose header
+# documents it:  # archonate:summary=...  # archonate:args=...
+# `archonate help` is built from those headers, so it never goes stale.
+
+set -euo pipefail
+
+ARCHONATE_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+export ARCHONATE_DIR
+export HYPR_DIR="$HOME/.config/hypr"
+export ARCHONATE_PY="$HYPR_DIR/lib/desktop.py"
+CMD="$ARCHONATE_DIR/cmd"
+
+meta() { sed -n "s/^# archonate:$2=//p" "$1" | head -1; }
+
+accent() {
+    # The active rice's accent, for the logo (truecolor), else plain
+    local rice hex
+    rice=$(readlink "$HYPR_DIR/active-rice.lua" 2>/dev/null | cut -d/ -f2)
+    hex=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['palette']['accent'])" \
+        "$HYPR_DIR/rices/$rice/desktop.json" 2>/dev/null) || return 0
+    printf '\e[38;2;%d;%d;%dm' "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
+}
+
+usage_line() {
+    local f=$1 name args
+    name=$(basename "$f" | tr '-' ' ')
+    args=$(meta "$f" args)
+    if [ -t 1 ]; then
+        printf '  \e[1m%-32s\e[0m %s\n' "$name${args:+ $args}" "$(meta "$f" summary)"
+    else
+        printf '  %-32s %s\n' "$name${args:+ $args}" "$(meta "$f" summary)"
+    fi
+}
+
+help() {
+    local filter=${1:-} f noun
+    local -a singles=()
+    if [ -z "$filter" ]; then
+        printf '%s' "$( [ -t 1 ] && accent )"; cat "$ARCHONATE_DIR/logo.txt"; [ -t 1 ] && printf '\e[0m'
+        echo
+        echo "usage: archonate <command> [args]      (archonate help <command> for one group)"
+    fi
+    # Nouns with several verbs get a block each; one-offs share the last block
+    for noun in $(ls "$CMD" | sed 's/-.*//' | uniq); do
+        [ -n "$filter" ] && [ "$noun" != "$filter" ] && continue
+        local -a fs=()
+        for f in "$CMD/$noun" "$CMD/$noun"-*; do
+            [ -x "$f" ] && [ "$(meta "$f" hidden)" != true ] && fs+=("$f")
+        done
+        if [ ${#fs[@]} -gt 1 ] || [ -n "$filter" ]; then
+            echo
+            for f in "${fs[@]}"; do usage_line "$f"; done
+        else
+            singles+=("${fs[@]}")
+        fi
+    done
+    if [ ${#singles[@]} -gt 0 ]; then
+        echo
+        for f in "${singles[@]}"; do usage_line "$f"; done
+    fi
+}
+
+[ $# -eq 0 ] && { help; exit 0; }
+case "$1" in
+    -h | --help | help) shift; help "${1:-}"; exit 0 ;;
+esac
+
+# Longest match first: noun-verb, then noun
+if [ $# -ge 2 ] && [ -x "$CMD/$1-$2" ]; then
+    f="$CMD/$1-$2"; shift 2
+elif [ -x "$CMD/$1" ]; then
+    f="$CMD/$1"; shift
+elif ls "$CMD/$1"-* >/dev/null 2>&1; then
+    echo "archonate $1: needs a subcommand" >&2
+    help "$1" >&2
+    exit 1
+else
+    echo "archonate: unknown command '$*'" >&2
+    echo "run 'archonate help' for the list" >&2
+    exit 1
+fi
+exec "$f" "$@"

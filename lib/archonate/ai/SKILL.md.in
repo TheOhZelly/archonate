@@ -1,0 +1,102 @@
+---
+name: archonate
+description: Drive and customise this Archonate desktop (Hyprland on Arch/CachyOS) - switch rice, style, mode or wallpaper, flip switches, change bar and widget settings, add keybinds or autostart, theme apps, check health, update the system. Use whenever the user asks to change how their desktop looks or behaves, or asks how something on it works.
+---
+
+# Archonate
+
+This machine runs **Archonate {{VERSION}}**: an opinionated Hyprland desktop. One
+command, `archonate`, controls all of it; a Settings app and a menu (SUPER+Escape)
+do the same things with a mouse. Prefer the command over editing files: it applies
+changes live, keeps every app in step, and is what the user's own buttons call.
+
+Start every task by reading the current state:
+
+```bash
+archonate status --json      # rice, style, mode, switches, the rice's settings, version
+```
+
+## The model
+
+- **Rice**: a whole desktop (bar, fonts, corners, sounds, colours). Archonate ships
+  one, `archonate`: a notch bar over a line that ripples with music, plus desktop
+  widgets (visualizer, media card, clock, stats). A machine may still have older
+  local rices (`archonate theme list`); they aren't part of Archonate.
+- **Style**: a colour scheme with its own wallpapers, worn by the rices listed in
+  `styledRices` (each remembers its own). Omarchy's dark themes, or one made from any
+  image with `archonate style from <image>`.
+- **Mode**: `normal`, `gaming` (bar hides over fullscreen, widgets and effects off),
+  `minimal`.
+- **Switches**: nightlight, dnd, caffeine, gaming, widgets, shader, screensaver,
+  intros. `archonate toggle <name> [on|off]`.
+- **Settings**: per rice or global, live. Change them with `archonate settings set`
+  (keys below), never by editing `settings.json`.
+
+## Doing things
+
+| The user wants | Run |
+| --- | --- |
+| other colours and wallpapers | `archonate style set <style>` (list: `archonate style list`) |
+| colours from a picture | `archonate style from ~/Pictures/x.jpg` |
+| next wallpaper | `archonate wallpaper next` |
+| gaming mode | `archonate mode set gaming` |
+| desktop widgets on/off | `archonate toggle widgets on` |
+| seconds on the clock | `archonate settings set barSeconds true` |
+| a keybind, a layout, autostart | edit `~/.config/hypr/user.lua` (below) |
+| something looks broken | `archonate doctor`, then follow what it prints |
+| updates | `archonate update` (opens a terminal; needs the user's password) |
+
+Switching rice, style or mode changes the whole screen at once. That is fine when
+the user asked for it; don't do it unprompted, and never while they are gaming or
+watching something.
+
+## Where things live
+
+- `~/.config/hypr/`: Archonate itself (a git checkout). **Not the user's to edit and
+  not yours**: updates replace it. Exceptions below.
+- `~/.config/hypr/user.lua`: **the user's own file**, loaded last for every rice,
+  never touched by updates. Keybinds, keyboard layouts, autostart, any Hyprland
+  option. Hyprland 0.57 Lua syntax:
+  ```lua
+  hl.bind("SUPER + B", hl.dsp.exec_cmd("blender"))
+  hl.config({ input = { kb_layout = "us,de", kb_options = "grp:win_space_toggle" } })
+  hl.on("hyprland.start", function() hl.exec_cmd("nextcloud --background") end)
+  ```
+  Keep what is already there (layouts especially). After editing: `hyprctl reload`,
+  then check `hyprctl configerrors`.
+- `~/.config/archonate/hooks/<event>.d/`: the user's scripts, run after theme-set,
+  mode-set, style-set, toggle, post-update, post-boot.
+- `~/.local/state/hypr-rice/`: state Archonate writes (settings, switches, previews).
+  Read it if useful; change it only through commands.
+- **Generated, never edit by hand** (rewritten on the next switch): each rice's
+  `desktop.json`, `fuzzel.ini` and `assets/wallpapers` (symlinks for styled rices),
+  `active-rice.lua`, `active-mode.lua`, and the app themes Archonate writes: kitty
+  `rice.conf`, GTK and Qt colours, btop, cava, Zed, Discord (`*/themes/archonate.theme.css`),
+  Spotify, the Claude app theme, the zsh prompt.
+
+## Rules
+
+- Use `archonate ...` first; fall back to files only for `user.lua` and hooks.
+- Run `archonate doctor` after any change you made by hand, and report what it says.
+- No `sudo`. If a step needs root, give the user the exact command to run. Never touch
+  the bootloader (limine), `/etc`, Secure Boot or snapper config.
+- Don't commit, push, reset or pull in `~/.config/hypr`; updates come through
+  `archonate update`.
+- No light mode: every rice and style is dark on purpose.
+- Keep the user's keyboard layouts and anything else they set in `user.lua`.
+
+## Settings keys
+
+`archonate settings set <key> <value> [--global | --rice <rice>]` (values are JSON:
+`true`, `12`, `"bottom-left"`; a bare word is a string). Current values: the
+`riceSettings` and `globalSettings` in `archonate status --json`.
+
+{{SETTINGS}}
+
+## Every command
+
+Generated from the commands' own descriptions (`archonate help` prints the same).
+
+```
+{{COMMANDS}}
+```

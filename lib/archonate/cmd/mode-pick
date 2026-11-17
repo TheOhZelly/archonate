@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open (or close) the picker on the modes row
+qs -p "$HYPR_DIR/picker" kill >/dev/null 2>&1 || PICKER_FOCUS=mode exec qs -p "$HYPR_DIR/picker"

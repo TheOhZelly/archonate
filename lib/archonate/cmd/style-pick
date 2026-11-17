@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Choose a style from a list (the menu's Rice > Styles)
+exec "$ARCHONATE_DIR/menu.sh" style

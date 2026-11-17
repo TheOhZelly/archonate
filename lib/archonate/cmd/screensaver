@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Start the screensaver now (any key or mouse movement ends it)
+shell_ipc screensaver

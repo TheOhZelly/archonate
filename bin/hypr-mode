@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Switch the active Hyprland mode overlay. No args lists modes; --pick opens a fuzzel menu.
+KIND=mode
+. "$HOME/.config/hypr/lib/switch.sh"
+switch_main "$@"

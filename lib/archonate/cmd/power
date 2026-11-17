@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=lock logout suspend reboot shutdown, or a menu with no argument
+# archonate:args=[action]
+case "${1:-}" in
+    "") exec "$HYPR_DIR/lib/session.sh" "$(current_rice)" ;;
+    lock) exec "$ARCHONATE_DIR/cmd/lock" ;;
+    logout) if command -v uwsm >/dev/null; then uwsm stop; else loginctl terminate-session "$XDG_SESSION_ID"; fi ;;
+    suspend) systemctl suspend-then-hibernate ;;
+    reboot) systemctl reboot ;;
+    shutdown) systemctl poweroff ;;
+    *) echo "unknown power action '$1'" >&2; exit 1 ;;
+esac

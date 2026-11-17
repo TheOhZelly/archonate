@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Switch to the next rice in the list
+# archonate:args=[--back]
+mapfile -t all < <(rice_names); cur=$(current_rice); step=1; [ "${1:-}" = --back ] && step=-1
+for i in "${!all[@]}"; do [ "${all[$i]}" = "$cur" ] && break; done
+exec "$BIN/hypr-rice" "${all[$(( (i + step + ${#all[@]}) % ${#all[@]} ))]}"

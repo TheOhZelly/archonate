@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Previous wallpaper of this rice
+shell_ipc prevWallpaper

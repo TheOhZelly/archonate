@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The latest Arch / CachyOS news (read before big updates)
+# archonate:args=[count]
+exec cachy-update --news ${1:+"$1"}

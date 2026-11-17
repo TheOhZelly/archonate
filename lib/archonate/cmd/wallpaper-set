@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Pick this rice's wallpaper by number (see Settings > Wallpaper)
+# archonate:args=<index>
+python3 "$ARCHONATE_PY" wallpaper "$(current_rice)" "${1:?index}" && shell_ipc rescanWallpaper

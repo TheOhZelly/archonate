@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Show hook folders and the scripts in them
+h="$HOME/.config/archonate/hooks"
+echo "hooks live in $h/<event>.d/ (files ending .sample are skipped)"
+for e in theme-set mode-set toggle post-update post-boot; do
+    printf '  %-12s' "$e"; ls "$h/$e.d" 2>/dev/null | tr '\n' ' '; echo
+done

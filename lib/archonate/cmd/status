@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The desktop at a glance: rice, mode, style, switches, settings (--json for scripts and AI agents)
+# archonate:args=[--json]
+json=$(python3 "$ARCHONATE_PY" status) || exit 1
+if [ "${1:-}" = --json ]; then
+    printf '%s\n' "$json"
+    exit 0
+fi
+jq -r '
+  "archonate \(.version)",
+  "rice    \(.rice)\(if .style then "  (style: \(.style))" else "" end)",
+  "mode    \(.mode)",
+  "on      \([.toggles | to_entries[] | select(.value) | .key] | join(", "))",
+  "off     \([.toggles | to_entries[] | select(.value | not) | .key] | join(", "))"
+' <<<"$json"

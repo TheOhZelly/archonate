@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Print the Archonate logo in this rice's accent
+hex=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['palette']['accent'])" "$HYPR_DIR/rices/$(current_rice)/desktop.json" 2>/dev/null) || hex=""
+[ -n "$hex" ] && [ -t 1 ] && printf '\e[38;2;%d;%d;%dm' "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
+cat "$ARCHONATE_DIR/logo.txt"
+[ -t 1 ] && printf '\e[0m'
+true

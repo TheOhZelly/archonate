@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Remove software: no args for the menu; a section; 'search' over what's installed; or package names
+# archonate:args=[section | search | <packages...>]
+P="$ARCHONATE_DIR/pkg.sh"
+case "${1:-}" in
+    "") exec "$P" menu-remove ;;
+    search) exec "$P" search installed ;;
+    browser|editor|terminal|development|gaming|apps|font) exec "$P" section "${1^}" remove ;;
+    ai) exec "$P" section AI remove ;;
+    *) exec "$P" run remove "$@" ;;
+esac

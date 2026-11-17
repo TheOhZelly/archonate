@@ -1,0 +1,63 @@
+# Archonate install catalog: section	label	packages (space-separated; paru finds repo or AUR)	after (optional, runs with sudo after install)
+Browser	Brave	brave-bin
+Browser	Firefox	firefox
+Browser	Zen	zen-browser-bin
+Browser	Chromium	chromium
+Browser	Google Chrome	google-chrome
+Browser	LibreWolf	librewolf
+Editor	Zed	zed
+Editor	VS Code	visual-studio-code-bin
+Editor	Cursor	cursor-bin
+Editor	Neovim	neovim
+Editor	Helix	helix
+Editor	Sublime Text	sublime-text-4
+Editor	Emacs	emacs-wayland
+Terminal	Kitty	kitty
+Terminal	Ghostty	ghostty
+Terminal	Alacritty	alacritty
+Terminal	Foot	foot
+Terminal	WezTerm	wezterm
+Development	Node.js + npm	nodejs npm
+Development	Bun	bun
+Development	Deno	deno
+Development	Python + uv	python python-pip uv
+Development	Go	go
+Development	Rust (rustup)	rustup	sudo -u "$SUDO_USER" rustup default stable
+Development	Java (OpenJDK)	jdk-openjdk
+Development	Zig	zig
+Development	.NET SDK	dotnet-sdk
+Development	Docker	docker docker-compose docker-buildx	systemctl enable --now docker.socket && usermod -aG docker "$SUDO_USER"
+Development	GitHub CLI	github-cli
+Development	Lazygit	lazygit
+Gaming	Steam	steam
+Gaming	Lutris	lutris
+Gaming	Heroic (Epic, GOG)	heroic-games-launcher-bin
+Gaming	Prism Launcher (Minecraft)	prismlauncher
+Gaming	RetroArch	retroarch retroarch-assets-xmb
+Gaming	Bottles	bottles
+Gaming	MangoHud + GameMode	mangohud lib32-mangohud gamemode lib32-gamemode
+Gaming	Xbox controllers (xpadneo)	xpadneo-dkms
+Gaming	Moonlight (game streaming)	moonlight-qt
+AI	Ollama (CUDA)	ollama-cuda	systemctl enable --now ollama
+AI	LM Studio	lmstudio-bin
+AI	Claude Code	claude-code
+Apps	Obsidian	obsidian
+Apps	Signal	signal-desktop
+Apps	Bitwarden	bitwarden
+Apps	Tailscale	tailscale	systemctl enable --now tailscaled
+Apps	Dropbox	dropbox
+Apps	OBS Studio	obs-studio
+Apps	Vesktop (Discord)	vesktop-bin
+Apps	LibreOffice	libreoffice-fresh
+Apps	GIMP	gimp
+Apps	Krita	krita
+Apps	Blender	blender
+Apps	VLC	vlc
+Apps	mpv	mpv
+Font	Cascadia Code Nerd	ttf-cascadia-code-nerd
+Font	Fira Code Nerd	ttf-firacode-nerd
+Font	Iosevka Nerd	ttf-iosevka-nerd
+Font	Meslo Nerd	ttf-meslo-nerd
+Font	Victor Mono Nerd	ttf-victor-mono-nerd
+Font	Hack Nerd	ttf-hack-nerd
+Font	Geist Mono Nerd	otf-geist-mono-nerd

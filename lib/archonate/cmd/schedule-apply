@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Switch to whichever rice the day/night schedule wants right now
+exec python3 "$ARCHONATE_PY" schedule-tick --force

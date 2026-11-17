@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Remove a style you made from a wallpaper (to the trash)
+# archonate:args=<style>
+d="$HOME/.local/share/archonate/styles/${1:?usage: archonate style remove <style>}"
+[ -f "$d/style.json" ] || { echo "no style '$1'" >&2; exit 1; }
+grep -q '"source": "wallpaper"' "$d/style.json" || { echo "'$1' came from omarchy; only styles made from wallpapers can be removed here" >&2; exit 1; }
+for r in $(python3 "$ARCHONATE_PY" styles | jq -r ".styled[]"); do
+    [ "$("$ARCHONATE_DIR/cmd/style-current" "$r")" = "$1" ] && { echo "the $r rice is wearing '$1'; switch its style first" >&2; exit 1; }
+done
+gio trash "$d" && echo "removed $1 (in the trash)"

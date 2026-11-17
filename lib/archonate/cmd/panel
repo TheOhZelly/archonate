@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open (or close) a quick panel: control network bluetooth sound calendar media power updates
+# archonate:args=<name>
+shell_ipc panel "${1:-control}"

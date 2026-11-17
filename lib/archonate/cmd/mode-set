@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Switch mode: normal, gaming or minimal
+# archonate:args=<mode>
+[ -n "${1:-}" ] || { echo "usage: archonate mode set <mode>" >&2; exit 1; }
+exec "$BIN/hypr-mode" "$1"

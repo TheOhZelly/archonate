@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Install software: no args for the menu; a section (browser editor terminal development gaming ai apps font); 'search' / 'aur'; or package names
+# archonate:args=[section | search | aur | <packages...>]
+P="$ARCHONATE_DIR/pkg.sh"
+case "${1:-}" in
+    "") exec "$P" menu-install ;;
+    search) exec "$P" search repo ;;
+    aur) exec "$P" search aur ;;
+    browser|editor|terminal|development|gaming|apps|font) exec "$P" section "${1^}" install ;;
+    ai) exec "$P" section AI install ;;
+    *) exec "$P" run install "$@" ;;
+esac

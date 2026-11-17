@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Every switch and whether it is on
+python3 "$ARCHONATE_PY" toggles | python3 -c '
+import json, sys
+for t in json.load(sys.stdin):
+    print("  " + ("●" if t["on"] else "○") + " " + t["id"].ljust(11) + " " + t["label"])' 2>/dev/null || python3 "$ARCHONATE_PY" toggles

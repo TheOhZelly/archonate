@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Dress the Claude app in the active rice now (it also follows every rice/style switch, live)
+pacman -Q claude-desktop-extra >/dev/null 2>&1 || echo "note: themes need the claude-desktop-extra package (AUR: claude-desktop-extra); the official build ignores them" >&2
+python3 "$ARCHONATE_PY" claude && echo "Claude is wearing $(current_rice)"

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Steer notifications from the keyboard (SUPER+CTRL+comma); brings back the last five if none are up
+shell_ipc notifKeys

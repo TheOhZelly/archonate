@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Run your hooks for an event by hand
+# archonate:args=<event> [args]
+exec python3 "$ARCHONATE_PY" hook "$@"

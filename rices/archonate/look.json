@@ -1,0 +1,12 @@
+{
+    "_": "What archonate keeps whatever style it wears; the style brings palette, ANSI, folders and wallpapers (lib/desktop.py build_style).",
+    "default_style": "matte-black",
+    "desktop": {
+        "cursor": {"theme": "WhiteSur-cursors", "size": 24},
+        "icons": "Papirus-Rice",
+        "kitty": {"opacity": 0.9, "padding": 16, "cursor_shape": "block", "blur": 20, "font": "JetBrainsMono Nerd Font"},
+        "fastfetch": {"logo": {"type": "file", "source": "assets/fastfetch-logo.txt", "colors": ["accent", "secondary"]}},
+        "newtab": {"font": "JetBrainsMono Nerd Font", "weight": 700, "radius": 10, "greeting": ""}
+    },
+    "fuzzel": {"font": "JetBrainsMono Nerd Font:size=12", "width": 40, "lines": 9, "hpad": 22, "vpad": 18, "ipad": 10, "alpha": "f0", "border": 1, "border_alpha": "99", "radius": 10}
+}

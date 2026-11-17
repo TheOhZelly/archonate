@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=fastfetch with a shine across the rice's logo (new terminals do this; ARCHONATE_NO_SHINE=1 for plain)
+exec zsh -c 'source ~/.config/hypr/lib/fetch.zsh && archonate_fetch'
