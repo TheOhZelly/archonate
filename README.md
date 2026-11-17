@@ -39,6 +39,13 @@ Same desktop, other styles (`archonate style set <name>`, or Super + F9):
 On Arch Linux or anything built on it (CachyOS, EndeavourOS, ...):
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/TheOhZelly/archonate/master/boot.sh | bash
+```
+
+It moves your current Hyprland config aside (to `~/.config/hypr.bak-<date>`),
+puts Archonate in its place and runs the installer. Rather do it by hand:
+
+```bash
 mv ~/.config/hypr ~/.config/hypr.bak 2>/dev/null   # keep what you had
 git clone https://github.com/TheOhZelly/archonate ~/.config/hypr
 ~/.config/hypr/install.sh

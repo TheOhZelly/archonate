@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Archonate on Arch Linux or anything built on it (CachyOS, EndeavourOS, ...).
 #
+#   curl -fsSL https://raw.githubusercontent.com/TheOhZelly/archonate/master/boot.sh | bash
+#
+# or by hand:
 #   mv ~/.config/hypr ~/.config/hypr.bak 2>/dev/null   # keep what was there
 #   git clone https://github.com/TheOhZelly/archonate ~/.config/hypr
 #   ~/.config/hypr/install.sh
