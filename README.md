@@ -1,5 +1,7 @@
 # Archonate
 
+![Archonate in the solitude style: the notch bar, media card, visualizer, poster clock and stats over a hand-drawn wallpaper](docs/screenshots/solitude.webp)
+
 An opinionated Hyprland desktop with one design, and every app dressed to
 match it: terminal, file manager, editor, Spotify, Discord, the browser's
 toolbar, the login screen.
@@ -20,6 +22,17 @@ toolbar, the login screen.
   `archonate status --json` gives scripts and agents the whole state.
 - **Everything is findable**: a cheat sheet, a searchable menu, a Settings app
   and one command, `archonate`.
+
+Same desktop, other styles (`archonate style set <name>`, or Super + F9):
+
+| | |
+| --- | --- |
+| ![tokyo-night](docs/screenshots/tokyo-night.webp) | ![gruvbox](docs/screenshots/gruvbox.webp) |
+| tokyo-night | gruvbox |
+| ![kanagawa](docs/screenshots/kanagawa.webp) | ![nord](docs/screenshots/nord.webp) |
+| kanagawa | nord |
+| ![neon-drive](docs/screenshots/neon-drive.webp) | ![matte-black](docs/screenshots/matte-black.webp) |
+| neon-drive | matte-black |
 
 ## Install
 
