@@ -42,6 +42,7 @@ icon() {
         Productivity) printf "󰈙" ;;
         Creative) printf "󰏘" ;;
         Utilities) printf "󰖷" ;;
+        Security) printf "󰒃" ;;
         Font) printf "󰛖" ;;
         *) printf " " ;;
     esac

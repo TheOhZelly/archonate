@@ -79,7 +79,7 @@ Scope {
                 // Rebuild with fresh data, keeping where we are
                 const titles = root.stack.map(l => l.title);
                 root.stack = [{ title: "archonate", items: root.build("root") }];
-                const jump = { rice: root.data.rices.length > 1 ? "rices" : "styles", theme: root.data.rices.length > 1 ? "rices" : "styles", style: "styles", styles: "styles", ai: "ai", agent: "ai", mode: "modes", wallpaper: "wallpaper", toggles: "toggles", switches: "toggles", panels: "panels", capture: "capture", settings: "settings", keys: "keys", keybindings: "keys", install: "install", remove: "remove", update: "update", power: "power" }[root.pending];
+                const jump = { rice: root.data.rices.length > 1 ? "rices" : "styles", theme: root.data.rices.length > 1 ? "rices" : "styles", style: "styles", styles: "styles", ai: "ai", agent: "ai", security: "install:Security", mode: "modes", wallpaper: "wallpaper", toggles: "toggles", switches: "toggles", panels: "panels", capture: "capture", settings: "settings", keys: "keys", keybindings: "keys", install: "install", remove: "remove", update: "update", power: "power" }[root.pending];
                 if (jump) {
                     const it = root.stack[0].items.find(i => i.sub === jump);
                     if (it)
@@ -107,6 +107,7 @@ Scope {
                 { label: "Quick panels", icon: "dashboard", sub: "panels" },
                 { label: "Capture", icon: "screenshot_region", sub: "capture" },
                 { label: "AI", icon: "smart_toy", sub: "ai" },
+                { label: "Security", icon: "shield", hint: "scans, firewall", run: ["security"] },
                 { label: "Settings", icon: "settings", sub: "settings" },
                 { label: "Keyboard shortcuts", icon: "keyboard", sub: "keys" },
                 { label: "Install", icon: "download", sub: "install" },
@@ -229,7 +230,7 @@ Scope {
     }
 
     function sectionIcon(s: string): string {
-        return { Service: "deployed_code_history", Browser: "language", Editor: "code", Terminal: "terminal", Development: "data_object", Gaming: "sports_esports", AI: "smart_toy", Communication: "forum", Media: "play_circle", Productivity: "description", Creative: "brush", Utilities: "handyman", Font: "match_case" }[s] ?? "category";
+        return { Service: "deployed_code_history", Browser: "language", Editor: "code", Terminal: "terminal", Development: "data_object", Gaming: "sports_esports", AI: "smart_toy", Communication: "forum", Media: "play_circle", Productivity: "description", Creative: "brush", Utilities: "handyman", Security: "shield", Font: "match_case" }[s] ?? "category";
     }
 
     // Every item one level down, for searching from the top

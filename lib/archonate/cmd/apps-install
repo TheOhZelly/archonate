@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Put Archonate's own apps (Security, Settings, Styles, Install Apps) in the app launcher
+# archonate:hidden=true
+# Run by the installer and by `archonate update`, so the entries always match
+# this version. Each is archonate-<name>.desktop in ~/.local/share/applications.
+APPS="$HOME/.local/share/applications"
+A="$HOME/.local/bin/archonate"
+mkdir -p "$APPS"
+entry() { # file name comment exec icon keywords categories
+    cat >"$APPS/archonate-$1.desktop" <<DESK
+[Desktop Entry]
+Type=Application
+Name=$2
+Comment=$3
+Exec=$4
+Icon=$5
+Keywords=$6
+Categories=$7
+Terminal=false
+X-Archonate=app
+DESK
+}
+entry security "Security" "Virus scans, firewall, vulnerable packages, quarantine" "$A security" security-high \
+    "antivirus;virus;malware;clamav;scan;firewall;ufw;quarantine;audit;archonate;" "System;Security;"
+entry settings "Settings" "Wi-Fi, Bluetooth, sound, display, bar, styles and more" "$A settings" preferences-system \
+    "preferences;control;wifi;bluetooth;sound;display;archonate;" "Settings;"
+entry styles "Styles" "Change the look: colours and wallpapers, with previews" "$A theme pick" preferences-desktop-theme \
+    "style;theme;rice;colours;colors;wallpaper;look;archonate;" "Settings;DesktopSettings;"
+entry install "Install Apps" "Curated apps, any package, web apps and terminal apps" "$A install" system-software-install \
+    "install;apps;software;store;package;aur;webapp;archonate;" "System;PackageManager;"
+# the old hand-made entry these replace
+rm -f "$APPS/rice-settings.desktop"
+update-desktop-database "$APPS" >/dev/null 2>&1 || true
+echo "launcher: Security, Settings, Styles, Install Apps"

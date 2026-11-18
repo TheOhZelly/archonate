@@ -145,6 +145,13 @@ elif [ -L "$HOME/.local/share/archonate/skills/archonate/SKILL.md" ] || [ -f "$H
 else
     warn "coding agents haven't been taught Archonate yet" "archonate agent skills on"
 fi
+sec=$("$ARCHONATE_DIR/cmd/security" status --json 2>/dev/null)
+case $(jq -r .firewall <<<"$sec") in
+    on) pass "firewall on" ;;
+    off) warn "firewall is off" "archonate security firewall on" ;;
+    *) warn "no firewall installed" "archonate install security" ;;
+esac
+[ "$(jq -r .quarantined <<<"$sec")" -gt 0 ] 2>/dev/null && warn "$(jq -r .quarantined <<<"$sec") file(s) in quarantine" "archonate security"
 n=$(ls -d "$HOME"/.local/share/archonate/styles/*/style.json 2>/dev/null | wc -l)
 styled=$(python3 "$ARCHONATE_PY" styles | jq -r '.styled | join(", ")')
 [ "$n" -gt 0 ] && pass "$n imported styles (plus the shipped ones) for $styled" || warn "no omarchy styles imported yet ($styled only have the shipped ones)" "archonate style import"

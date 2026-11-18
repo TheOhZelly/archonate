@@ -98,6 +98,7 @@ archonate toggle nightlight             # dnd caffeine gaming widgets shader scr
 archonate wallpaper pick                # wallpaper switcher (also next, prev)
 archonate install gaming                # a curated list (or package names, or: search, aur)
 archonate webapp new Notion notion.so   # any site as an app in the launcher (tui new for terminal apps)
+archonate security                      # virus scans (ClamAV), firewall, vulnerable packages, quarantine
 archonate settings wifi                 # the Settings app, at a page
 archonate install gaming                # install or remove apps by section
 archonate update                        # snapshot, then update everything

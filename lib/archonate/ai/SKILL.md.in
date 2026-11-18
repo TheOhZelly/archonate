@@ -46,6 +46,7 @@ archonate status --json      # rice, style, mode, switches, the rice's settings,
 | install an app | `archonate install <packages>` (curated lists: `archonate install <section>`) |
 | a website as an app | `archonate webapp new "Name" example.com` |
 | a terminal program as an app | `archonate tui new "Name" "command"` |
+| virus scan, firewall, security state | `archonate security status --json`; `archonate security scan quick\|home\|<path>`, `firewall on\|off`, `audit` (the bare command is an interactive menu: don't run it) |
 | something looks broken | `archonate doctor`, then follow what it prints |
 | updates | `archonate update` (opens a terminal; needs the user's password) |
 

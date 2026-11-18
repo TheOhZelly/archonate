@@ -16,6 +16,9 @@ set -euo pipefail
 HYPR="$HOME/.config/hypr"
 YES=false
 [ "${1:-}" = --yes ] && YES=true
+# --yes also means no package prompts (paru: no PKGBUILD review either)
+NOCONFIRM=()
+$YES && NOCONFIRM=(--noconfirm)
 
 [ "$(id -u)" -ne 0 ] || { echo "run this as yourself, not root (it asks for sudo when it needs it)" >&2; exit 1; }
 [ "$(cd "$(dirname "$0")" && pwd)" = "$HYPR" ] || { echo "clone this repo to $HYPR first (see the top of this file)" >&2; exit 1; }
@@ -38,6 +41,14 @@ backup() {
     [ -e "$b" ] || { cp -p "$1" "$b"; note "backed up $1 -> ${b##*/}"; }
 }
 
+# ARCHONATE_SKIP_PACKAGES=1: the packages are already there (the Archonate ISO
+# and its installer put them in place); do everything else.
+if [ -n "${ARCHONATE_SKIP_PACKAGES:-}" ]; then
+    step "Packages"
+    note "already installed (ARCHONATE_SKIP_PACKAGES)"
+    AUR=$(command -v paru || command -v yay || true)
+    skipped=()
+else
 # ---- AUR helper ------------------------------------------------------------
 step "AUR helper"
 AUR=$(command -v paru || command -v yay || true)
@@ -71,18 +82,18 @@ repo=(
     # what the scripts lean on
     python python-pillow jq fzf libnotify dart-sass btop fastfetch pciutils pacman-contrib git curl
     # looks
-    papirus-icon-theme ttf-material-symbols-variable ttf-jetbrains-mono-nerd ttf-rubik-vf
+    papirus-icon-theme ttf-material-symbols-variable ttf-jetbrains-mono-nerd
     noto-fonts adwaita-fonts ttf-fira-sans
     # the archonate rice: its visualizer
     cava
 )
-# in CachyOS's repos but the AUR on plain Arch, so they go through the helper
-aur=(gpu-screen-recorder whitesur-cursor-theme-git)
+# the AUR (or CachyOS's repos for some), so they go through the helper
+aur=(gpu-screen-recorder whitesur-cursor-theme-git ttf-rubik-vf)
 skipped=()
 if [ -n "$AUR" ]; then
-    "$AUR" -S --needed "${repo[@]}" "${aur[@]}"
+    "$AUR" -S --needed "${NOCONFIRM[@]}" $($YES && [[ $AUR == *paru ]] && echo --skipreview) "${repo[@]}" "${aur[@]}"
 else
-    sudo pacman -S --needed "${repo[@]}"
+    sudo pacman -S --needed "${NOCONFIRM[@]}" "${repo[@]}"
     skipped+=("${aur[@]}")
 fi
 
@@ -101,9 +112,11 @@ if [ -n "$AUR" ]; then
     command -v claude-desktop >/dev/null || { ask "Install the Claude app (claude-desktop-extra, a community build that follows the rice)?" n && extra+=(claude-desktop-extra) || true; }
 fi
 if [ ${#extra[@]} -gt 0 ]; then
-    ${AUR:-sudo pacman} -S --needed "${extra[@]}"
+    ${AUR:-sudo pacman} -S --needed "${NOCONFIRM[@]}" $($YES && [[ ${AUR:-} == *paru ]] && echo --skipreview) "${extra[@]}"
 else
     note "nothing to add"
+fi
+
 fi
 
 # ---- commands ----------------------------------------------------------------
@@ -113,6 +126,7 @@ ln -sfn "$HYPR/bin/hypr-rice" "$HOME/.local/bin/hypr-rice"
 ln -sfn "$HYPR/bin/hypr-mode" "$HOME/.local/bin/hypr-mode"
 ln -sfn "$HYPR/lib/archonate/archonate" "$HOME/.local/bin/archonate"
 note "archonate, hypr-rice, hypr-mode"
+"$HOME/.local/bin/archonate" apps install | sed 's/^/    /'
 
 # ---- terminal ----------------------------------------------------------------
 step "Kitty follows the rice"
@@ -136,7 +150,7 @@ case "${SHELL##*/}" in
         lines=()
         grep -qs 'local/bin' "$rc" || lines+=('path=(~/.local/bin $path)')
         if ask "Theme the zsh prompt to follow the rice (powerlevel10k)?" y; then
-            ${AUR:-sudo pacman} -S --needed zsh-theme-powerlevel10k
+            ${AUR:-sudo pacman} -S --needed "${NOCONFIRM[@]}" zsh-theme-powerlevel10k
             # (after p10k's own setup; reloads open shells when the rice changes)
             grep -qs 'lib/prompt.zsh' "$rc" || lines+=('[[ -r ~/.config/hypr/lib/prompt.zsh ]] && source ~/.config/hypr/lib/prompt.zsh')
         fi
@@ -182,7 +196,9 @@ fi
 
 # ---- yours -----------------------------------------------------------------------
 step "Styles for archonate (omarchy's dark themes, plus its own)"
-"$HOME/.local/bin/archonate" style import || note "couldn't fetch styles now; later: archonate style import"
+if [ -n "${ARCHONATE_NO_IMPORT:-}" ]; then note "skipped for now (later: archonate style import)"; else
+    "$HOME/.local/bin/archonate" style import || note "couldn't fetch styles now; later: archonate style import"
+fi
 # dress every rice that wears styles (offline, archonate wears its own built-in style)
 for r in $(python3 "$HYPR/lib/desktop.py" styles | jq -r '.styled[]'); do
     python3 "$HYPR/lib/desktop.py" style-build "$r" || note "couldn't dress $r yet; later: archonate style set <style> $r"

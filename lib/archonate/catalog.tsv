@@ -8,6 +8,12 @@ Service	Dropbox	dropbox
 Service	Nextcloud	nextcloud-client
 Service	Proton VPN	proton-vpn-gtk-app
 Service	Mullvad VPN	mullvad-vpn-bin	systemctl enable --now mullvad-daemon
+Security	ClamAV (virus scanner)	clamav	freshclam && systemctl enable --now clamav-freshclam.service
+Security	Firewall (ufw)	ufw	ufw default deny incoming && ufw default allow outgoing && ufw --force enable && systemctl enable --now ufw.service
+Security	arch-audit (vulnerable packages)	arch-audit
+Security	KeePassXC	keepassxc
+Security	Bitwarden	bitwarden
+Security	1Password	1password
 Development	Node.js + npm	nodejs npm
 Development	Bun	bun
 Development	Deno	deno
@@ -107,9 +113,6 @@ Creative	Inkscape	inkscape
 Creative	Blender	blender
 Creative	Darktable (photos)	darktable
 Creative	Pinta	pinta
-Utilities	Bitwarden	bitwarden
-Utilities	1Password	1password
-Utilities	KeePassXC	keepassxc
 Utilities	LocalSend (share with phones)	localsend-bin
 Utilities	qBittorrent	qbittorrent
 Utilities	Mission Center (system monitor)	mission-center

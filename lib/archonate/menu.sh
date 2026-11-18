@@ -177,6 +177,7 @@ menu_main() {
         "󰔡   Switches" \
         "󰕮   Quick panels" \
         "󰄀   Capture" \
+        "󰒃   Security" \
         "󰒓   Settings" \
         "󰌌   Keyboard shortcuts" \
         "󰚰   Update" \
@@ -187,6 +188,7 @@ menu_main() {
     case "$c" in
         *Rice*|*Style*) menu_rice ;;
         *Mode*) menu_mode ;;
+        *Security*) "$A" security ;;
         *Wallpaper*) menu_wallpaper ;;
         *Switches*) menu_toggles ;;
         *panels*) menu_panels ;;

@@ -50,4 +50,5 @@ fi
 shell_ipc checkUpdates >/dev/null 2>&1 || true # refresh the bar's badge
 # Keep your coding agents' Archonate skills current (unless you turned them off)
 [ -f "$HOME/.config/archonate/agent-skills-off" ] || "$BIN/archonate" agent skills on >/dev/null 2>&1 || true
+"$BIN/archonate" apps install >/dev/null 2>&1 || true # launcher entries match this version
 echo; read -rsn1 -p "Done. Press any key to close."

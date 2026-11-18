@@ -1,0 +1,392 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Security centre: virus scans (ClamAV), firewall, vulnerable packages, quarantine; no args for the menu
+# archonate:args=[status [--json] | report | scan quick|home|<path> | update | firewall on|off | audit | quarantine | schedule on|off]
+#
+# A terminal app in the rice's colours. Everything it does needs no daemon:
+# scans run clamscan on demand, found files go to a quarantine folder you can
+# restore from, signatures update with freshclam (or its timer), the firewall
+# is ufw (deny incoming, allow outgoing), and arch-audit lists installed
+# packages with known security holes. Steps that need root ask for your
+# password in the terminal, and say what they'll run first.
+set -uo pipefail
+. "$ARCHONATE_DIR/agents.sh" 2>/dev/null || true
+
+STATE="$HOME/.local/state/hypr-rice"
+LOG="$STATE/security.json"        # last scan: when, what, how many found
+QDIR="$HOME/.local/share/archonate/quarantine"
+QLOG="$QDIR/.index.tsv"           # quarantined file <TAB> original path <TAB> virus <TAB> when
+SIGS=${ARCHONATE_CLAMAV_DB:-/var/lib/clamav}
+UNITS="$HOME/.config/systemd/user"
+mkdir -p "$STATE" "$QDIR"
+
+# ---- looks ------------------------------------------------------------------------
+pal() { jq -r ".palette.$1 // empty" "$HYPR_DIR/rices/$(current_rice)/desktop.json" 2>/dev/null; }
+fg() { local h=${1:-ffffff}; printf '\e[38;2;%d;%d;%dm' "0x${h:0:2}" "0x${h:2:2}" "0x${h:4:2}"; }
+ACC=$(pal accent); ACC=${ACC:-8fa4b2}
+OKC=$(pal secondary); OKC=${OKC:-8fa58a}
+BAD=$(pal error); BAD=${BAD:-c2756e}
+DIM=$(pal text_dim); DIM=${DIM:-656c71}
+TXT=$(pal text); TXT=${TXT:-c8ccce}
+R=$'\e[0m' B=$'\e[1m'
+good() { printf '  %s●%s  %-22s %s\n' "$(fg "$OKC")" "$R" "$1" "$2"; }
+warn() { printf '  %s●%s  %-22s %s\n' "$(fg "$BAD")" "$R" "$1" "$2"; }
+meh() { printf '  %s○%s  %-22s %s%s%s\n' "$(fg "$DIM")" "$R" "$1" "$(fg "$DIM")" "$2" "$R"; }
+say() { printf '\n%s==>%s %s%s%s\n' "$(fg "$ACC")" "$R" "$B" "$*" "$R"; }
+pause() { [ -t 0 ] && { printf '\n%spress any key%s' "$(fg "$DIM")" "$R"; read -rsn1; echo; }; }
+need() { # tool package: offer to install it
+    command -v "$1" >/dev/null && return 0
+    say "$2 isn't installed"
+    [ -t 0 ] || { notify "Security" "$2 isn't installed (archonate install $2)"; return 1; }
+    read -rp "  Install it now? [Y/n] " a
+    case "${a:-y}" in [yY]*) "$BIN/archonate" install "$2" </dev/tty; command -v "$1" >/dev/null ;; *) return 1 ;; esac
+}
+
+# ---- facts -----------------------------------------------------------------------
+fw_state() { # on | off | none
+    command -v ufw >/dev/null || { echo none; return; }
+    systemctl is-active --quiet ufw && echo on || echo off
+}
+sig_age_days() { # days since the virus signatures last changed, or empty
+    local newest
+    newest=$(stat -c %Y "$SIGS"/*.c[lv]d 2>/dev/null | sort -n | tail -1)
+    [ -n "$newest" ] && echo $(( ($(date +%s) - newest) / 86400 ))
+}
+secure_boot() { # on | off | unknown
+    local f
+    f=$(ls /sys/firmware/efi/efivars/SecureBoot-* 2>/dev/null | head -1)
+    [ -n "$f" ] || { echo unknown; return; }
+    [ "$(od -An -t u1 -j4 -N1 "$f" 2>/dev/null | tr -d ' ')" = 1 ] && echo on || echo off
+}
+encrypted() { lsblk -rno TYPE 2>/dev/null | grep -qx crypt; }
+quarantined() { [ -f "$QLOG" ] && grep -c . "$QLOG" || echo 0; }
+last_scan() { jq -r '"\(.when)\t\(.scope)\t\(.found)"' "$LOG" 2>/dev/null; }
+scheduled() { systemctl --user is-enabled --quiet archonate-scan.timer 2>/dev/null; }
+
+status() {
+    local fw age sb ls when scope found
+    fw=$(fw_state); age=$(sig_age_days); sb=$(secure_boot)
+    if [ "${1:-}" = --json ]; then
+        IFS=$'\t' read -r when scope found <<<"$(last_scan)"
+        jq -n --arg fw "$fw" --arg age "$age" --arg sb "$sb" --argjson enc "$(encrypted && echo true || echo false)" \
+            --argjson clam "$(command -v clamscan >/dev/null && echo true || echo false)" \
+            --argjson sched "$(scheduled && echo true || echo false)" --argjson q "$(quarantined)" \
+            --arg when "${when:-}" --arg scope "${scope:-}" --arg found "${found:-}" \
+            '{firewall: $fw, clamav: $clam, signatureAgeDays: ($age | tonumber? // null), scheduledScan: $sched,
+              quarantined: $q, secureBoot: $sb, diskEncrypted: $enc,
+              lastScan: (if $when == "" then null else {when: $when, scope: $scope, found: ($found | tonumber? // 0)} end)}'
+        return
+    fi
+    case $fw in
+        on) good "Firewall" "on: nothing gets in unless you allow it" ;;
+        off) warn "Firewall" "off (turn it on below)" ;;
+        none) warn "Firewall" "not installed (ufw)" ;;
+    esac
+    if command -v clamscan >/dev/null; then
+        if [ -z "$age" ]; then warn "Virus signatures" "never downloaded (update them below)"
+        elif [ "$age" -le 3 ]; then good "Virus signatures" "up to date ($([ "$age" = 0 ] && echo today || echo "$age days old"))"
+        else warn "Virus signatures" "$age days old (update them below)"; fi
+    else
+        meh "Virus scanner" "ClamAV not installed (any scan offers to install it)"
+    fi
+    IFS=$'\t' read -r when scope found <<<"$(last_scan)"
+    if [ -z "${when:-}" ]; then meh "Last scan" "never"
+    elif [ "${found:-0}" -gt 0 ]; then warn "Last scan" "$when, $scope: $found found (see quarantine)"
+    else good "Last scan" "$when, $scope: clean"; fi
+    scheduled && good "Weekly scan" "on (Downloads, Sundays)" || meh "Weekly scan" "off"
+    [ "$(quarantined)" -gt 0 ] && warn "Quarantine" "$(quarantined) file(s)" || good "Quarantine" "empty"
+    encrypted && good "Disk encryption" "on" || meh "Disk encryption" "off (only an installer can add it)"
+    case $sb in on) good "Secure Boot" "on" ;; off) meh "Secure Boot" "off" ;; *) meh "Secure Boot" "unknown (BIOS boot?)" ;; esac
+}
+
+# ---- actions ------------------------------------------------------------------------
+scan() { # quick | home | <path>
+    need clamscan clamav || return 1
+    [ -n "$(sig_age_days)" ] || { say "No virus signatures yet: getting them first"; update || return 1; }
+    local what=${1:-quick} targets=() label
+    case $what in
+        quick) label="Downloads, Desktop, /tmp"
+            # xdg-user-dir answers $HOME for a folder that isn't set up: use the usual name then
+            local dl dt
+            dl=$(xdg-user-dir DOWNLOAD 2>/dev/null); [ -n "$dl" ] && [ "$dl" != "$HOME" ] || dl="$HOME/Downloads"
+            dt=$(xdg-user-dir DESKTOP 2>/dev/null); [ -n "$dt" ] && [ "$dt" != "$HOME" ] || dt="$HOME/Desktop"
+            for d in "$dl" "$dt" /tmp; do
+                [ -d "$d" ] && targets+=("$d")
+            done ;;
+        home) label="your home folder"; targets=("$HOME") ;;
+        *) [ -e "$what" ] || { echo "no such file or folder: $what" >&2; return 1; }
+            label=$(realpath "$what"); targets=("$label") ;;
+    esac
+    say "Scanning $label"
+    printf '  %sfound files move to quarantine; nothing is deleted%s\n\n' "$(fg "$DIM")" "$R"
+    local out found=0
+    out=$(mktemp)
+    # skip what's huge and never holds downloads: caches, game libraries, git objects, node_modules
+    clamscan -r -i --move="$QDIR" \
+        --exclude-dir='/\.cache/' --exclude-dir='/\.local/share/Steam/' --exclude-dir='/node_modules/' \
+        --exclude-dir='/\.git/' --exclude-dir="^$QDIR" "${targets[@]}" 2>/dev/null | tee "$out" |
+        grep --line-buffered -E 'FOUND$|moved to|^Scanned files|^Infected files|^Time' | sed 's/^/  /'
+    # record what moved: "<path>: <virus> FOUND" then "<path>: moved to '<dest>'"
+    local f v dest items
+    items=$(mktemp)
+    while IFS= read -r line; do
+        case $line in
+            *": "*" FOUND") f=${line%%: *}; v=${line#*: }; v=${v% FOUND} ;;
+            *": moved to '"*) dest=${line##*moved to \'}; dest=${dest%\'}
+                printf '%s\t%s\t%s\t%s\n' "$dest" "${line%%: moved to*}" "${v:-unknown}" "$(date '+%F %H:%M')" >>"$QLOG"
+                printf '%s\t%s\t%s\n' "$dest" "${line%%: moved to*}" "${v:-unknown}" >>"$items"
+                found=$((found + 1)) ;;
+        esac
+    done <"$out"
+    rm -f "$out"
+    # the last scan, with what it found (the findings screen reads this)
+    jq -Rn --arg when "$(date '+%F %H:%M')" --arg scope "$label" --argjson found "$found" \
+        '{when: $when, scope: $scope, found: $found,
+          items: [inputs | split("\t") | select(length == 3) | {file: .[0], from: .[1], virus: .[2]}]}' <"$items" >"$LOG"
+    rm -f "$items"
+    if [ "$found" -gt 0 ]; then
+        printf '\n  %s%s%d file(s) found and quarantined.%s\n' "$B" "$(fg "$BAD")" "$found" "$R"
+        [ -n "${ARCHONATE_NO_ALERT:-}" ] || alert "$found" # (tests set it)
+    else
+        printf '\n  %s%sClean.%s\n' "$B" "$(fg "$OKC")" "$R"
+    fi
+}
+
+# A notification you can click: it opens the findings screen. It waits for the
+# click in a unit of its own, so a scan run by the weekly timer can finish
+# (systemd would otherwise end the wait along with the scan's service).
+alert() { # count
+    local n=$1
+    if ! systemd-run --user --quiet --collect --unit="archonate-security-alert-$(date +%s%N)" \
+        "$BIN/archonate" security alert-wait "$n" 2>/dev/null; then
+        setsid -f "$BIN/archonate" security alert-wait "$n" >/dev/null 2>&1
+    fi
+}
+alert_wait() { # count: show it, and open the findings screen on a click
+    local n=$1 act what
+    [ "$n" = 1 ] && what="1 suspicious file" || what="$n suspicious files"
+    act=$(notify-send -a archonate -u critical -i security-low -A "default=Show" -A "show=Show me" \
+        "Security: $what found" "Moved to quarantine, where it can't run. Click to see what it is and what to do.")
+    case $act in default | show) "$BIN/archonate" security report ;; esac
+}
+
+# What a detection name means, in plain words (ClamAV's prefixes)
+explain() { # virus name
+    case $1 in
+        *EICAR*) echo "The EICAR test file: harmless, made only to check that virus scanners work." ;;
+        PUA.*) echo "A \"potentially unwanted\" program: adware, a crack, a miner or a hacking tool. Not always malicious, and false alarms happen. Delete it unless you know exactly what it is." ;;
+        Heuristics.*) echo "Flagged by its shape, not matched to a known virus. Suspicious, but false alarms are common: restore it only if you trust where it came from." ;;
+        Win.* | Win32.*) echo "Windows malware. It can't run on Linux, but it could infect a Windows PC if you pass it on. Delete it." ;;
+        Doc.* | Xls.* | Pdf.*) echo "A document carrying malicious macros or scripts. Opening it on Windows/Office could infect that machine. Delete it." ;;
+        Html.* | Js.*) echo "A web page or script with malicious code (phishing, a redirect or an exploit). Delete it." ;;
+        Unix.* | Linux.* | Elf.*) echo "Linux malware: this one could actually run here. Delete it, and run a full scan." ;;
+        Andr.*) echo "Android malware. Harmless on this PC, but don't put it on a phone. Delete it." ;;
+        Email.* | Phishing.*) echo "A phishing or malicious email. Delete it, and don't open its links." ;;
+        *) echo "Matched a known malware signature. Delete it unless you're sure it's a false alarm." ;;
+    esac
+}
+
+# The findings screen: what the last scan found, what it means, what to do
+report() {
+    local n
+    n=$(jq -r '.items // [] | length' "$LOG" 2>/dev/null || echo 0)
+    while true; do
+        clear
+        "$BIN/archonate" logo
+        printf '\n  %s%sS E C U R I T Y   ·   F O U N D%s\n\n' "$B" "$(fg "$BAD")" "$R"
+        if [ "${n:-0}" -eq 0 ]; then
+            printf '  %sThe last scan found nothing.%s\n' "$(fg "$OKC")" "$R"
+            pause; return
+        fi
+        printf '  %s%s scan of %s%s\n\n' "$(fg "$DIM")" "$(jq -r .when "$LOG")" "$(jq -r .scope "$LOG")" "$R"
+        local i file from virus left=0
+        for ((i = 0; i < n; i++)); do
+            file=$(jq -r ".items[$i].file" "$LOG"); from=$(jq -r ".items[$i].from" "$LOG"); virus=$(jq -r ".items[$i].virus" "$LOG")
+            printf '  %s%s%s%s\n' "$B" "$(fg "$BAD")" "$virus" "$R"
+            printf '  %sfile%s      %s\n' "$(fg "$DIM")" "$R" "$(basename "$from")"
+            printf '  %swas in%s    %s\n' "$(fg "$DIM")" "$R" "$(dirname "$from")"
+            if [ -e "$file" ]; then
+                printf '  %snow%s       %sin quarantine, it can'"'"'t run%s\n' "$(fg "$DIM")" "$R" "$(fg "$OKC")" "$R"
+                left=$((left + 1))
+            else
+                printf '  %snow%s       dealt with (deleted or restored)\n' "$(fg "$DIM")" "$R"
+            fi
+            printf '  %s%s%s\n\n' "$(fg "$TXT")" "$(explain "$virus" | fold -s -w 72 | sed '2,$s/^/  /')" "$R"
+        done
+        local opts=()
+        [ "$left" -gt 0 ] && opts+=("delete	Delete $([ "$left" = 1 ] && echo it || echo "all $left") for good" "pick	Restore or delete one by one")
+        [ -n "$(agent_default 2>/dev/null)" ] && opts+=("ai	Ask your AI agent about $([ "$n" = 1 ] && echo it || echo them)")
+        opts+=("menu	Security centre" "quit	Close")
+        local c
+        c=$(printf '%s\n' "${opts[@]}" | fzf --with-nth=2 --delimiter='\t' --prompt="what now › " --no-sort --reverse --height=8 \
+            --color="prompt:#$ACC,pointer:#$ACC,fg+:#$TXT,bg+:-1,gutter:-1") || return
+        case ${c%%$'\t'*} in
+            delete)
+                read -rp "  Delete $left file(s) for good? [y/N] " a
+                [[ $a == [yY]* ]] || continue
+                for ((i = 0; i < n; i++)); do
+                    file=$(jq -r ".items[$i].file" "$LOG")
+                    [ -e "$file" ] && rm -f -- "$file" && grep -vF -- "$file	" "$QLOG" >"$QLOG.new"; [ -f "$QLOG.new" ] && mv "$QLOG.new" "$QLOG"
+                done ;;
+            pick) quarantine ;;
+            ai) "$BIN/archonate" agent prompt "ClamAV on this Archonate machine found and quarantined these files: $(jq -c '[.items[] | {virus, originally: .from, quarantined_as: .file}]' "$LOG"). Explain what each detection likely is, whether it could be a false alarm, how it probably got here, and what I should do. Read the files only if needed; don't run them, and don't delete or restore anything unless I say so. 'archonate security' manages quarantine." ;;
+            menu) menu; return ;;
+            quit) return ;;
+        esac
+    done
+}
+
+update() { # virus signatures (root: freshclam writes /var/lib/clamav)
+    need freshclam clamav || return 1
+    say "Updating virus signatures (sudo freshclam)"
+    sudo freshclam || return 1
+    if ! systemctl is-enabled --quiet clamav-freshclam.service 2>/dev/null && [ -t 0 ]; then
+        read -rp "  Keep them updated automatically (clamav-freshclam service)? [Y/n] " a
+        case "${a:-y}" in [yY]*) sudo systemctl enable --now clamav-freshclam.service ;; esac
+    fi
+}
+
+firewall() { # on | off
+    need ufw ufw || return 1
+    case ${1:-} in
+        on) say "Firewall on: deny incoming, allow outgoing (sudo ufw)"
+            sudo ufw default deny incoming && sudo ufw default allow outgoing &&
+                sudo ufw --force enable && sudo systemctl enable --now ufw.service ;;
+        off) say "Firewall off (sudo ufw disable)"
+            sudo ufw disable && sudo systemctl disable --now ufw.service ;;
+        *) echo "firewall on|off" >&2; return 1 ;;
+    esac
+}
+
+audit() { # installed packages with known security holes
+    need arch-audit arch-audit || return 1
+    say "Installed packages with known security issues"
+    local out
+    out=$(arch-audit -u 2>&1)
+    if [ -z "$out" ]; then
+        printf '  %sNone with a fix waiting.%s\n' "$(fg "$OKC")" "$R"
+    else
+        printf '%s\n' "$out" | sed 's/^/  /'
+        printf '\n  %sThese have fixes in newer versions: archonate update%s\n' "$(fg "$DIM")" "$R"
+    fi
+    local open
+    open=$(arch-audit 2>/dev/null | grep -vc "fixed" || true)
+    [ "${open:-0}" -gt 0 ] && printf '  %s%d more with no fix released yet (arch-audit for the list).%s\n' "$(fg "$DIM")" "$open" "$R"
+}
+
+quarantine() {
+    [ "$(quarantined)" -gt 0 ] || { say "Quarantine is empty"; return; }
+    local c q orig v when
+    c=$(awk -F'\t' '{printf "%s\t%s  (%s, %s)\n", NR, $2, $3, $4}' "$QLOG" |
+        fzf --ansi --with-nth=2.. --delimiter='\t' --prompt="quarantine › " --header="enter: choose what to do with it" \
+            --color="prompt:#$ACC,pointer:#$ACC,hl:#$ACC,hl+:#$ACC,header:#$DIM" --height=60% --reverse) || return
+    local n=${c%%$'\t'*}
+    IFS=$'\t' read -r q orig v when < <(sed -n "${n}p" "$QLOG")
+    local act
+    act=$(printf 'Delete it for good\nRestore it to %s\nLeave it here\n' "$orig" |
+        fzf --prompt="$(basename "$orig") › " --color="prompt:#$ACC,pointer:#$ACC" --height=30% --reverse) || return
+    case $act in
+        Delete*) rm -f -- "$q" && sed -i "${n}d" "$QLOG" && say "Deleted" ;;
+        Restore*) mkdir -p "$(dirname "$orig")" && mv -n -- "$q" "$orig" && sed -i "${n}d" "$QLOG" && say "Restored to $orig" ;;
+    esac
+}
+
+schedule() { # on | off: a weekly quick scan (systemd user timer)
+    case ${1:-} in
+        on) mkdir -p "$UNITS"
+            cat >"$UNITS/archonate-scan.service" <<EOF
+[Unit]
+Description=Archonate weekly virus scan (Downloads, Desktop, /tmp)
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ExecStart=$HOME/.local/bin/archonate security scan quick
+EOF
+            cat >"$UNITS/archonate-scan.timer" <<'EOF'
+[Unit]
+Description=Archonate weekly virus scan
+
+[Timer]
+OnCalendar=Sun 12:00
+Persistent=true
+RandomizedDelaySec=30m
+
+[Install]
+WantedBy=timers.target
+EOF
+            systemctl --user daemon-reload && systemctl --user enable --now archonate-scan.timer &&
+                say "Weekly scan on: Sundays (or the next time you're on, if you missed it)" ;;
+        off) systemctl --user disable --now archonate-scan.timer 2>/dev/null
+            rm -f "$UNITS/archonate-scan.service" "$UNITS/archonate-scan.timer"
+            systemctl --user daemon-reload; say "Weekly scan off" ;;
+        *) echo "schedule on|off" >&2; return 1 ;;
+    esac
+}
+
+# ---- the menu ---------------------------------------------------------------------
+menu() {
+    while true; do
+        clear
+        "$BIN/archonate" logo
+        printf '\n  %s%sS E C U R I T Y%s\n\n' "$B" "$(fg "$ACC")" "$R"
+        status
+        echo
+        local fw items c
+        fw=$(fw_state)
+        local findings=""
+        [ "$(jq -r '.found // 0' "$LOG" 2>/dev/null)" -gt 0 ] && findings="report	What was found      the last scan's findings, explained"
+        items=$(printf '%s\n' ${findings:+"$findings"} \
+            "scan-quick	Quick scan          Downloads, Desktop, /tmp" \
+            "scan-home	Full scan           your whole home folder (slow)" \
+            "scan-path	Scan something      a file or folder you pick" \
+            "update	Update signatures   the virus definitions" \
+            "fw	$([ "$fw" = on ] && echo "Firewall off      " || echo "Firewall on       ")  $([ "$fw" = on ] && echo "stop blocking incoming connections" || echo "block incoming, allow outgoing")" \
+            "audit	Vulnerable packages known security holes in what's installed" \
+            "quarantine	Quarantine          $(quarantined) file(s): restore or delete" \
+            "schedule	$(scheduled && echo "Weekly scan off   " || echo "Weekly scan on    ")  a quiet scan of Downloads every Sunday" \
+            "quit	Close")
+        c=$(fzf --ansi --with-nth=2 --delimiter='\t' --prompt="security › " --no-sort --reverse --height=13 \
+            --color="prompt:#$ACC,pointer:#$ACC,hl:#$ACC,hl+:#$ACC,fg+:#$TXT,bg+:-1,gutter:-1" <<<"$items") || break
+        case ${c%%$'\t'*} in
+            report) report ;;
+            scan-quick) scan quick; pause ;;
+            scan-home) scan home; pause ;;
+            scan-path)
+                local p
+                read -rep "  $(fg "$ACC")file or folder:$R " p
+                p=${p/#\~/$HOME}
+                [ -n "$p" ] && { scan "$p"; pause; } ;;
+            update) update; pause ;;
+            fw) [ "$fw" = on ] && firewall off || firewall on; pause ;;
+            audit) audit; pause ;;
+            quarantine) quarantine ;;
+            schedule) scheduled && schedule off || schedule on; pause ;;
+            quit) break ;;
+        esac
+    done
+}
+
+case "${1:-}" in
+    "")
+        # from a key or the menu: open in a terminal of its own
+        if [ ! -t 0 ] || [ ! -t 1 ]; then
+            exec setsid -f kitty --class archonate-term --title "Archonate · Security" -o confirm_os_window_close=0 "$0" >/dev/null 2>&1
+        fi
+        menu ;;
+    status) shift; status "$@" ;;
+    report)
+        if [ ! -t 0 ] || [ ! -t 1 ]; then
+            exec setsid -f kitty --class archonate-term --title "Archonate · Security" -o confirm_os_window_close=0 "$0" report >/dev/null 2>&1
+        fi
+        report ;;
+    alert-wait) shift; alert_wait "${1:-1}" ;;
+    scan) shift; scan "${1:-quick}" ;;
+    update) update ;;
+    firewall) shift; firewall "${1:-}" ;;
+    audit) audit ;;
+    quarantine) quarantine ;;
+    schedule) shift; schedule "${1:-}" ;;
+    *) sed -n '3,4p' "$0" | sed 's/^# archonate:[a-z]*=//'; exit 1 ;;
+esac
