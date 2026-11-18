@@ -86,6 +86,15 @@ repo=(
     noto-fonts adwaita-fonts ttf-fira-sans
     # the archonate rice: its visualizer
     cava
+    # the shell: zsh with Archonate's prompt (lib/zsh), its plugins and tools
+    zsh zsh-completions zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search
+    zsh-theme-powerlevel10k eza zoxide
+    # desktop basics: home folders, USB drives and phones in Thunar, thumbnails,
+    # archives, a video player, image and PDF viewers, saved passwords, CJK
+    # text, Windows/camera disks, firmware updates
+    xdg-user-dirs inetutils gvfs gvfs-mtp thunar-volman thunar-archive-plugin file-roller
+    tumbler ffmpegthumbnailer unzip 7zip wget mpv imv zathura zathura-pdf-mupdf
+    gnome-keyring libsecret seahorse noto-fonts-cjk ntfs-3g exfatprogs fwupd man-pages
 )
 # the AUR (or CachyOS's repos for some), so they go through the helper
 aur=(gpu-screen-recorder whitesur-cursor-theme-git ttf-rubik-vf)
@@ -128,6 +137,10 @@ ln -sfn "$HYPR/lib/archonate/archonate" "$HOME/.local/bin/archonate"
 note "archonate, hypr-rice, hypr-mode"
 "$HOME/.local/bin/archonate" apps install | sed 's/^/    /'
 
+step "Your folders"
+# Desktop, Downloads, Pictures, ... (screenshots, recordings and the browser use them)
+if command -v xdg-user-dirs-update >/dev/null; then xdg-user-dirs-update && note "$(cd ~ && ls -d Desktop Documents Downloads Music Pictures Videos 2>/dev/null | tr '\n' ' ')"; else note "xdg-user-dirs not installed"; fi
+
 # ---- terminal ----------------------------------------------------------------
 step "Kitty follows the rice"
 kc="$HOME/.config/kitty/kitty.conf"
@@ -149,20 +162,23 @@ case "${SHELL##*/}" in
         rc="$HOME/.zshrc"
         lines=()
         grep -qs 'local/bin' "$rc" || lines+=('path=(~/.local/bin $path)')
-        if ask "Theme the zsh prompt to follow the rice (powerlevel10k)?" y; then
-            ${AUR:-sudo pacman} -S --needed "${NOCONFIRM[@]}" zsh-theme-powerlevel10k
-            # (after p10k's own setup; reloads open shells when the rice changes)
-            grep -qs 'lib/prompt.zsh' "$rc" || lines+=('[[ -r ~/.config/hypr/lib/prompt.zsh ]] && source ~/.config/hypr/lib/prompt.zsh')
+        zsh_line='source ~/.config/hypr/lib/zsh/archonate.zsh   # Archonate: prompt, plugins, completion'
+        use_zsh=false
+        if ! grep -qs 'lib/zsh/archonate.zsh' "$rc" && ask "Use Archonate's zsh (its own prompt theme, suggestions, highlighting, completion)?" y; then
+            use_zsh=true
+            # (an older install sourced lib/prompt.zsh directly: archonate.zsh does that now)
+            grep -qs 'lib/prompt.zsh' "$rc" || lines+=("$zsh_line")
         fi
         fetch_line='source ~/.config/hypr/lib/fetch.zsh 2>/dev/null && archonate_fetch || fastfetch'
         swap_fetch=false
         if ! grep -qs 'lib/fetch.zsh' "$rc" && ask "Show fastfetch with the ARCHONATE logo in new terminals?" y; then
             if grep -qs '^fastfetch$' "$rc"; then swap_fetch=true; else lines+=("$fetch_line"); fi
         fi
-        if [ ${#lines[@]} -gt 0 ] || $swap_fetch; then
+        if [ ${#lines[@]} -gt 0 ] || $swap_fetch || { $use_zsh && grep -qs 'lib/prompt.zsh' "$rc"; }; then
             backup "$rc"
             touch "$rc"
             if $swap_fetch; then sed -i "s#^fastfetch\$#${fetch_line//&/\\&}#" "$rc"; fi
+            if $use_zsh && grep -qs 'lib/prompt.zsh' "$rc"; then sed -i "s|^.*lib/prompt\.zsh.*\$|${zsh_line//&/\\&}|" "$rc"; fi
             if [ ${#lines[@]} -gt 0 ]; then { printf '\n# Archonate\n'; printf '%s\n' "${lines[@]}"; } >>"$rc"; fi
             note "edited ~/.zshrc"
         else
@@ -195,7 +211,7 @@ if pacman -Q cachy-update >/dev/null 2>&1; then
 fi
 
 # ---- yours -----------------------------------------------------------------------
-step "Styles for archonate (omarchy's dark themes, plus its own)"
+step "Styles for archonate (a set of dark themes, plus its own)"
 if [ -n "${ARCHONATE_NO_IMPORT:-}" ]; then note "skipped for now (later: archonate style import)"; else
     "$HOME/.local/bin/archonate" style import || note "couldn't fetch styles now; later: archonate style import"
 fi

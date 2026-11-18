@@ -1,7 +1,7 @@
 // Notification daemon: popups in the top-right corner, plus a sidebar
 // ("center") with the date, media controls and notification history.
 //
-// Like omarchy's: notifications from one app stack into a deck (hover to fan
+// Notifications from one app stack into a deck (hover to fan
 // it out; nothing expires under your pointer). Click runs the notification's
 // own action, right-click or ✕ dismisses. Verification codes get "Copy code"
 // (kept out of clipboard history, cleared after a minute). Keyboard control

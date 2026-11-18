@@ -151,7 +151,7 @@ palette = {
     "dark_bg": hls(bgsrc["h"], 0.05, bg_s),
 }
 
-# Folder colour, like the omarchy import
+# Folder colour, like the style import
 FOLDERS = [(10, "red"), (25, "deeporange"), (40, "orange"), (55, "yellow"), (75, "palebrown"),
            (150, "green"), (175, "teal"), (195, "cyan"), (225, "blue"), (255, "indigo"),
            (285, "violet"), (320, "magenta"), (345, "pink"), (361, "red")]

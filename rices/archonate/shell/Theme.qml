@@ -1,4 +1,4 @@
-// archonate: omarchy's flat mono look, Ryoku-style living desktop. Every colour
+// archonate: a flat mono look and a living desktop. Every colour
 // comes from ../desktop.json and recolours live.
 import QtQuick
 import Quickshell

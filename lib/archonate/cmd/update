@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 . "$ARCHONATE_DIR/common.sh"
-# archonate:summary=Full system update the cachy-update way, with a snapshot first and a health check after
+# archonate:summary=Update Archonate and the whole system (cachy-update way), with a snapshot first and a health check after
 # archonate:args=[--devel]
 # cachy-update (CachyOS's arch-update) does the update itself: the pending list
 # and a confirmation, the latest news, repos then AUR (paru or yay), and afterwards
@@ -18,6 +18,20 @@ fi
 sudo true || exit 1 # the password once, up front (the snapshot needs it too)
 "$BIN/archonate" snapshot create "before archonate update" || echo -e "\e[33mNo snapshot taken; carrying on.\e[0m"
 echo
+
+# ---- Archonate itself: the latest from its git repo (fast-forward only) --------
+arch_old=$(git -C "$HYPR_DIR" rev-parse HEAD 2>/dev/null || true)
+if [ -n "$arch_old" ] && git -C "$HYPR_DIR" rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1; then
+    echo -e "\e[1mUpdating Archonate…\e[0m"
+    if git -C "$HYPR_DIR" pull -q --ff-only; then
+        arch_new=$(git -C "$HYPR_DIR" rev-parse HEAD)
+        if [ "$arch_new" = "$arch_old" ]; then echo "  already the latest"
+        else git -C "$HYPR_DIR" log --format='  %s' "$arch_old..$arch_new" | head -15; fi
+    else
+        echo -e "  \e[33mcouldn't fast-forward (local commits or edits in the way); kept as is\e[0m"
+    fi
+    echo
+fi
 
 before=$(pacman -Q | md5sum)
 if command -v cachy-update >/dev/null; then
@@ -46,6 +60,15 @@ if [ "$before" != "$after" ]; then
     fi
 elif [ $status -ne 0 ]; then
     echo -e "\e[33mNothing was installed (exit $status).\e[0m"
+fi
+# A new Archonate whose setup changed (new packages, new defaults): run it again
+if [ -n "${arch_new:-}" ] && [ "$arch_new" != "$arch_old" ] &&
+    ! git -C "$HYPR_DIR" diff --quiet "$arch_old" "$arch_new" -- install.sh; then
+    echo -e "\n\e[1mArchonate's setup changed: running it again (install.sh --yes)…\e[0m"
+    "$HYPR_DIR/install.sh" --yes || echo -e "\e[33minstall.sh stopped; run it yourself: ~/.config/hypr/install.sh\e[0m"
+    touch "$HYPR_DIR/rices/$(current_rice)/shell/shell.qml" 2>/dev/null || true # the shell picks up new code
+elif [ -n "${arch_new:-}" ] && [ "$arch_new" != "$arch_old" ]; then
+    touch "$HYPR_DIR/rices/$(current_rice)/shell/shell.qml" 2>/dev/null || true
 fi
 shell_ipc checkUpdates >/dev/null 2>&1 || true # refresh the bar's badge
 # Keep your coding agents' Archonate skills current (unless you turned them off)

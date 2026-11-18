@@ -23,7 +23,7 @@ archonate status --json      # rice, style, mode, switches, the rice's settings,
   widgets (visualizer, media card, clock, stats). A machine may still have older
   local rices (`archonate theme list`); they aren't part of Archonate.
 - **Style**: a colour scheme with its own wallpapers, worn by the rices listed in
-  `styledRices` (each remembers its own). Omarchy's dark themes, or one made from any
+  `styledRices` (each remembers its own). Downloaded dark themes, or one made from any
   image with `archonate style from <image>`.
 - **Mode**: `normal`, `gaming` (bar hides over fullscreen, widgets and effects off),
   `minimal`.

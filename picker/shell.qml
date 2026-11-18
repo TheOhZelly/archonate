@@ -17,7 +17,7 @@ ShellRoot {
     property int modeIndex: 0
     property int styleIndex: 0
     property bool onModes: Quickshell.env("PICKER_FOCUS") === "mode"
-    // Rices with a look.json wear styles (omarchy's themes and more): a row
+    // Rices with a look.json wear styles (downloaded themes and more): a row
     // of their own, following whichever of them is selected
     property bool onStyles: false
     // One rice (the shipped setup): there's nothing to pick there, so the

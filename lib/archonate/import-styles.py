@@ -1,10 +1,10 @@
-"""Turn omarchy's themes into Archonate styles (worn by the rices with a look.json).
+"""Turn downloaded themes into Archonate styles (worn by the rices with a look.json).
 
-    python3 -I import-omarchy.py <omarchy checkout> [--force]
+    python3 -I import-styles.py <theme repo checkout> [--force] [--skip-logo=<name>]
 
 Each dark theme becomes ~/.local/share/archonate/styles/<name>/:
     style.json      palette + ANSI in the shape desktop.json uses
-    backgrounds/    its wallpapers (omarchy-logo ones swapped for ours), and
+    backgrounds/    its wallpapers (other projects' logo ones swapped for ours), and
                     backgrounds/intros/ the animated clips some of them open with
 Light themes are skipped. Runs with -I: the checkout is downloaded data.
 """
@@ -17,6 +17,8 @@ from pathlib import Path
 
 SRC = Path(sys.argv[1]) / "themes"
 FORCE = "--force" in sys.argv
+# wallpapers carrying the source project's own logo (named after it) are left out
+SKIP_LOGO = next((a.split("=", 1)[1].lower() for a in sys.argv if a.startswith("--skip-logo=")), "")
 HOME = Path.home()
 DEST = HOME / ".local/share/archonate/styles"
 LOGO = HOME / ".config/hypr/lib/archonate/logo.txt"
@@ -122,7 +124,7 @@ for t in sorted(p for p in SRC.iterdir() if p.is_dir()):
     palette, ansi = convert(c)
     title = " ".join(w.capitalize() for w in t.name.split("-"))
     for f in sorted((t / "backgrounds").iterdir()):
-        if f.is_file() and f.suffix.lower() in IMG and "omarchy" not in f.name.lower() and not f.is_symlink():
+        if f.is_file() and f.suffix.lower() in IMG and not (SKIP_LOGO and SKIP_LOGO in f.name.lower()) and not f.is_symlink():
             shutil.copy2(f, out / "backgrounds" / f.name)
     # Animated intros: backgrounds/intros/<stem>.mp4 plays once, then the still
     intros = t / "backgrounds" / "intros"
@@ -135,7 +137,7 @@ for t in sorted(p for p in SRC.iterdir() if p.is_dir()):
     logo_wallpaper(out / "backgrounds" / "zz-archonate.png", palette["bg"], palette["accent"])
     (out / "style.json").write_text(json.dumps({
         "name": t.name, "title": title, "palette": palette, "ansi": ansi,
-        "folders": folder(palette["accent"]), "source": "omarchy",
+        "folders": folder(palette["accent"]), "source": "imported",
     }, indent=4) + "\n")
     done.append(t.name)
 

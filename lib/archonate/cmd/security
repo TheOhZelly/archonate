@@ -238,6 +238,27 @@ report() {
 
 update() { # virus signatures (root: freshclam writes /var/lib/clamav)
     need freshclam clamav || return 1
+    # The clamav-freshclam service holds freshclam's log lock: a second freshclam
+    # beside it dies ("Problem with internal logger"). Ask the service instead.
+    if systemctl is-active --quiet clamav-freshclam.service; then
+        say "Updating virus signatures (the clamav-freshclam service, checking now)"
+        local since line seen=0 n
+        since=$(date '+%Y-%m-%d %H:%M:%S')
+        sudo systemctl restart clamav-freshclam.service || return 1
+        # its first download is a few hundred MB: follow it until all three databases report in
+        for _ in $(seq 600); do
+            mapfile -t lines < <(sudo journalctl -u clamav-freshclam.service --since "$since" -o cat --no-pager 2>/dev/null)
+            for line in "${lines[@]:$seen}"; do printf '  %s\n' "$line"; done
+            seen=${#lines[@]}
+            n=$(printf '%s\n' "${lines[@]}" | grep -cE '(daily|main|bytecode)\.c[vl]d (database is up-to-date|updated)')
+            [ "$n" -ge 3 ] && return 0
+            printf '%s\n' "${lines[@]}" | grep -qE '^ERROR' && { echo "  freshclam reported an error (above)" >&2; return 1; }
+            systemctl is-active --quiet clamav-freshclam.service || { echo "  the clamav-freshclam service stopped (sudo journalctl -u clamav-freshclam)" >&2; return 1; }
+            sleep 1
+        done
+        echo "  still downloading after 10 minutes; the service carries on in the background" >&2
+        return 1
+    fi
     say "Updating virus signatures (sudo freshclam)"
     sudo freshclam || return 1
     if ! systemctl is-enabled --quiet clamav-freshclam.service 2>/dev/null && [ -t 0 ]; then

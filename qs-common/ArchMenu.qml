@@ -171,7 +171,7 @@ Scope {
         case "keys":
             return d.keybinds.map(b => ({ label: b.label, icon: "keyboard", hint: b.keys.join("  or  "), info: true, path: b.group }));
         case "install":
-            // omarchy's order: find anything, make an app, then the curated lists
+            // find anything, make an app, then the curated lists
             return [
                 { label: "Package", icon: "deployed_code", hint: "search the repos", run: ["install", "search"] },
                 { label: "AUR", icon: "package_2", hint: "search the AUR", run: ["install", "aur"] },
@@ -183,7 +183,7 @@ Scope {
         case "install-style":
             return [
                 { label: "New style from an image", icon: "add_photo_alternate", hint: "any wallpaper", run: ["style", "from"] },
-                { label: "Get omarchy's styles", icon: "download", hint: "or update them", term: "archonate style import" },
+                { label: "Get more styles", icon: "download", hint: "or update them", term: "archonate style import" },
                 { label: "Fonts", icon: "match_case", sub: "install:Font", hint: (d.catalog.Font ?? []).filter(i => i.installed).length + "/" + (d.catalog.Font ?? []).length }
             ];
         case "remove":

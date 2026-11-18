@@ -1,6 +1,6 @@
 // archonate bar: a notch hanging from the top edge, with curved shoulders, over a
 // hairline that runs the width of the screen and ripples with the music.
-// Inside, omarchy's density: the A (menu), workspaces, cpu and memory, the
+// Inside, dense and terse: the A (menu), workspaces, cpu and memory, the
 // clock, now playing, tray and status. Everything leads to a quick panel.
 import QtQuick
 import Quickshell
@@ -232,7 +232,7 @@ PanelWindow {
 
             Sep {}
 
-            // cpu and memory, omarchy-terse
+            // cpu and memory, terse
             Row {
                 visible: bar.showStats
                 anchors.verticalCenter: parent.verticalCenter

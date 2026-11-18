@@ -1,4 +1,4 @@
--- archonate: omarchy's flat, tight, keyboard-first look with a living desktop:
+-- archonate: a flat, tight, keyboard-first look with a living desktop:
 -- a notch bar hanging from the top edge, an audio visualizer, a media card,
 -- a poster clock and a stats column. Colours follow the wallpaper (desktop.json).
 local layers = require("lib.layers")

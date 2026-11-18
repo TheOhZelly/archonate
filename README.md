@@ -10,8 +10,7 @@ toolbar, the login screen.
   ripples with your music, and a living desktop (visualizer, media card,
   poster clock, system stats).
 - **Styles**: change its colours and wallpapers in one go. It ships its own
-  style, wears any of omarchy's dark themes
-  ([omarchy](https://github.com/omacom/omarchy)), or makes one from any
+  style, downloads a set of dark themes to wear, or makes one from any
   wallpaper of yours.
 - **Modes**: normal, gaming (the bar hides over fullscreen, the desktop goes
   quiet), minimal.
@@ -168,9 +167,8 @@ Archonate is free software under the [GPL-3.0](LICENSE).
 - The Hyprland base config (`hyprland/`, `variables.lua`) and the app colour
   templates in `lib/templates` are adapted from
   [caelestia](https://github.com/caelestia-dots) (GPL-3.0).
-- The idea of one command and one menu for the whole desktop, and the
-  styles archonate wears, come from [omarchy](https://github.com/omacom/omarchy)
-  (MIT). Its themes are downloaded at install time, not redistributed here.
+- The downloaded styles and their wallpapers aren't part of this repo; see
+  [WALLPAPERS.md](WALLPAPERS.md) for where they come from.
 - The ARCHONATE logo is set in the FIGlet font "Delta Corps Priest 1" by
   CoSMiC cHiLD.
 - Every sound is synthesised by `lib/archonate/make-sounds.py`; nothing is

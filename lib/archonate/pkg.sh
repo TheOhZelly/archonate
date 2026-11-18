@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Archonate install / remove, like omarchy's menus.
+# Archonate install / remove menus.
 #   pkg.sh menu-install                  sections + search, in the rice's fuzzel
 #   pkg.sh menu-remove
 #   pkg.sh section <Section>             a curated list (● = already installed)
@@ -120,9 +120,9 @@ run() { # install|remove pkgs... [--after cmd]
     read -rsn1 -p "Press any key to close."
 }
 
-style_menu() { # new styles, omarchy's, and fonts
+style_menu() { # new styles, downloaded ones, and fonts
     local c
-    c=$(pick "style" "󰋩   New style from an image" "󰇚   Get omarchy's styles" "󰛖   Fonts") || return
+    c=$(pick "style" "󰋩   New style from an image" "󰇚   Get more styles" "󰛖   Fonts") || return
     case "$c" in
         *image) "$BIN/archonate" style from ;;
         *styles) term "Archonate · styles" "$BIN/archonate" style import ;;

@@ -4,9 +4,9 @@ Archonate's wallpapers come with its styles:
 
 - **The built-in `archonate` style** (`lib/styles/archonate/`): the ARCHONATE
   logo on its own colours, drawn in code by Archonate, under the repo's GPL-3.0.
-- **omarchy's themes**: downloaded from [omarchy](https://github.com/omacom/omarchy)
-  at install time (`archonate style import`) with their wallpapers, under their
-  own terms. They are not redistributed here.
+- **Downloaded themes**: fetched at install time (`archonate style import`),
+  wallpapers included, from [github.com/omacom/omarchy](https://github.com/omacom/omarchy)
+  and used under their own terms. They are not redistributed here.
 - **Your own**: `archonate style from ~/Pictures/x.jpg` makes a style from any
   image, wallpaper included. It stays on your machine.
 

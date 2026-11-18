@@ -1,5 +1,5 @@
-# ARCHONATE in "Delta Corps Priest 1" (FIGlet font by CoSMiC cHiLD, the one
-# omarchy's logo uses). Glyphs copied from the .flf, set at full width.
+# ARCHONATE in "Delta Corps Priest 1" (FIGlet font by CoSMiC cHiLD).
+# Glyphs copied from the .flf, set at full width.
 G = {
 "A": ["   ▄████████", "  ███    ███", "  ███    ███", "  ███    ███", "▀███████████", "  ███    ███", "  ███    ███", "  ███    █▀ ", ""],
 "R": ["   ▄████████", "  ███    ███", "  ███    ███", " ▄███▄▄▄▄██▀", "▀▀███▀▀▀▀▀  ", "▀███████████", "  ███    ███", "  ███    ███", "  ███    ███"],

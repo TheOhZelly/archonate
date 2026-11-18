@@ -154,7 +154,7 @@ esac
 [ "$(jq -r .quarantined <<<"$sec")" -gt 0 ] 2>/dev/null && warn "$(jq -r .quarantined <<<"$sec") file(s) in quarantine" "archonate security"
 n=$(ls -d "$HOME"/.local/share/archonate/styles/*/style.json 2>/dev/null | wc -l)
 styled=$(python3 "$ARCHONATE_PY" styles | jq -r '.styled | join(", ")')
-[ "$n" -gt 0 ] && pass "$n imported styles (plus the shipped ones) for $styled" || warn "no omarchy styles imported yet ($styled only have the shipped ones)" "archonate style import"
+[ "$n" -gt 0 ] && pass "$n imported styles (plus the shipped ones) for $styled" || warn "no styles downloaded yet ($styled only have the shipped ones)" "archonate style import"
 if [ -d /usr/share/sddm/themes/archonate ]; then
     if diff -q "$HYPR_DIR/login/archonate/Main.qml" /usr/share/sddm/themes/archonate/Main.qml >/dev/null 2>&1; then
         pass "login screen is up to date"

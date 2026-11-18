@@ -28,7 +28,7 @@ menu_rice() {
     while read -r r; do
         [ "$r" = "$cur" ] && lines+=("󰏘   $r   ●") || lines+=("󰏘   $r")
     done < <(rice_names)
-    c=$(pick "rice" "󰏘   Visual picker" "󰏘   Styles for $(python3 "$ARCHONATE_PY" style-rice) (omarchy themes)" "${lines[@]}") || return
+    c=$(pick "rice" "󰏘   Visual picker" "󰏘   Styles for $(python3 "$ARCHONATE_PY" style-rice)" "${lines[@]}") || return
     case "$c" in
         *"Visual picker"*) "$A" theme pick ;;
         *"Styles for "*) menu_style ;;

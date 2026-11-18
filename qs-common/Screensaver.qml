@@ -1,5 +1,5 @@
 // Screensaver: the ARCHONATE logo, broken into its half-block pixels and run
-// through effects in this rice's colours, like omarchy's tte screensaver:
+// through effects in this rice's colours:
 // rain, decrypt, beams, swarm, slide, bloom. Each assembles the logo, lets a
 // colour wave run through it, then dissolves into the next. One per screen.
 // Starts after `minutes` idle (or `archonate screensaver`); any key, click,

@@ -3,7 +3,7 @@
 // next()/prev() cycle them (the choice is remembered per rice); with
 // `minutes` > 0 they also rotate on a timer. `live: false` pauses gifs/video.
 //
-// Intros (omarchy's animated backgrounds): a still `x.webp` with a clip at
+// Intros (animated backgrounds): a still `x.webp` with a clip at
 // `intros/x.mp4` beside it plays that clip once whenever it comes up (shell
 // start, a rice/style switch, picking it), then fades into the still.
 import QtQuick
