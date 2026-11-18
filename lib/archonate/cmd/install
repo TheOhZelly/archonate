@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 . "$ARCHONATE_DIR/common.sh"
-# archonate:summary=Install software: no args for the menu; a section (browser editor terminal development gaming ai apps font); 'search' / 'aur'; or package names
-# archonate:args=[section | search | aur | <packages...>]
+# archonate:summary=Install software: no args for the menu; a section (service development editor terminal browser ai gaming communication media productivity creative utilities font); 'search' / 'aur'; 'webapp' / 'tui' to make one; or package names
+# archonate:args=[section | search | aur | webapp | tui | <packages...>]
 P="$ARCHONATE_DIR/pkg.sh"
+# a catalog section, whatever the case you typed it in
+section_of() { grep -v '^#' "$ARCHONATE_DIR/catalog.tsv" | cut -f1 | awk '!s[$0]++' | grep -ix -- "$1"; }
 case "${1:-}" in
     "") exec "$P" menu-install ;;
-    search) exec "$P" search repo ;;
+    search | package) exec "$P" search repo ;;
     aur) exec "$P" search aur ;;
-    browser|editor|terminal|development|gaming|apps|font) exec "$P" section "${1^}" install ;;
-    ai) exec "$P" section AI install ;;
-    *) exec "$P" run install "$@" ;;
+    webapp | web-app) shift; exec "$BIN/archonate" webapp new "$@" ;;
+    tui) shift; exec "$BIN/archonate" tui new "$@" ;;
+    style) exec "$P" style-menu ;;
+    *)
+        if [ $# -eq 1 ] && sec=$(section_of "$1"); then exec "$P" section "$sec" install; fi
+        exec "$P" run install "$@" ;;
 esac

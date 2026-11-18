@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 . "$ARCHONATE_DIR/common.sh"
-# archonate:summary=Remove software: no args for the menu; a section; 'search' over what's installed; or package names
-# archonate:args=[section | search | <packages...>]
+# archonate:summary=Remove software: no args for the menu; a section; 'search' over what's installed; 'webapp' / 'tui' for ones you made; or package names
+# archonate:args=[section | search | webapp | tui | <packages...>]
 P="$ARCHONATE_DIR/pkg.sh"
+section_of() { grep -v '^#' "$ARCHONATE_DIR/catalog.tsv" | cut -f1 | awk '!s[$0]++' | grep -ix -- "$1"; }
 case "${1:-}" in
     "") exec "$P" menu-remove ;;
     search) exec "$P" search installed ;;
-    browser|editor|terminal|development|gaming|apps|font) exec "$P" section "${1^}" remove ;;
-    ai) exec "$P" section AI remove ;;
-    *) exec "$P" run remove "$@" ;;
+    webapp | web-app) shift; exec "$BIN/archonate" webapp remove "$@" ;;
+    tui) shift; exec "$BIN/archonate" tui remove "$@" ;;
+    *)
+        if [ $# -eq 1 ] && sec=$(section_of "$1"); then exec "$P" section "$sec" remove; fi
+        exec "$P" run remove "$@" ;;
 esac

@@ -43,6 +43,9 @@ archonate status --json      # rice, style, mode, switches, the rice's settings,
 | desktop widgets on/off | `archonate toggle widgets on` |
 | seconds on the clock | `archonate settings set barSeconds true` |
 | a keybind, a layout, autostart | edit `~/.config/hypr/user.lua` (below) |
+| install an app | `archonate install <packages>` (curated lists: `archonate install <section>`) |
+| a website as an app | `archonate webapp new "Name" example.com` |
+| a terminal program as an app | `archonate tui new "Name" "command"` |
 | something looks broken | `archonate doctor`, then follow what it prints |
 | updates | `archonate update` (opens a terminal; needs the user's password) |
 

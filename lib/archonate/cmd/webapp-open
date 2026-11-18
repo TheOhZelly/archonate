@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Open an address as a web app (what web app launchers run)
+# archonate:args=<address>
+# archonate:hidden=true
+# Chromium-family browsers can open a site as a bare app window (--app).
+# Your default browser if it's one of them, else the first one installed;
+# without any, the address opens in your default browser.
+url=${1:?usage: archonate webapp open <address>}
+declare -A BIN=([brave-browser]=brave [brave-origin]=brave-origin [chromium]=chromium [google-chrome]=google-chrome-stable
+    [vivaldi-stable]=vivaldi-stable [microsoft-edge]=microsoft-edge-stable [helium]=helium-browser)
+def=$(xdg-settings get default-web-browser 2>/dev/null)
+def=${def%.desktop}
+for b in "${BIN[$def]:-}" brave chromium google-chrome-stable vivaldi-stable microsoft-edge-stable brave-origin helium-browser; do
+    [ -n "$b" ] && command -v "$b" >/dev/null && exec setsid -f "$b" --app="$url" >/dev/null 2>&1
+done
+exec setsid -f xdg-open "$url" >/dev/null 2>&1

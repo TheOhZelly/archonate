@@ -20,6 +20,11 @@ ShellRoot {
     // Rices with a look.json wear styles (omarchy's themes and more): a row
     // of their own, following whichever of them is selected
     property bool onStyles: false
+    // One rice (the shipped setup): there's nothing to pick there, so the
+    // picker is about styles: a strip of their previews instead of rice cards
+    readonly property bool solo: data.rices.length <= 1
+    onSoloChanged: if (solo && !onModes)
+        onStyles = true
     readonly property string selName: data.rices[riceIndex]?.name ?? ""
     readonly property var selStyled: data.styled?.[selName] ?? null
     readonly property var selStyles: selStyled?.styles ?? []
@@ -88,7 +93,7 @@ ShellRoot {
                     root.apply();
                 else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
                     // rows: rices -> styles (rices that wear them) -> modes
-                    const rows = root.stylesShown ? ["rices", "styles", "modes"] : ["rices", "modes"];
+                    const rows = root.solo ? (root.stylesShown ? ["styles", "modes"] : ["modes"]) : root.stylesShown ? ["rices", "styles", "modes"] : ["rices", "modes"];
                     const cur = root.onModes ? "modes" : root.onStyles ? "styles" : "rices";
                     const d = event.key === Qt.Key_Up ? -1 : 1;
                     const nxt = rows[(rows.indexOf(cur) + d + rows.length) % rows.length];
@@ -191,7 +196,7 @@ ShellRoot {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: stage.style ? root.selName + " · " + stage.style.title : (stage.sel?.name ?? "")
+                    text: stage.style ? (root.solo ? stage.style.title : root.selName + " · " + stage.style.title) : (stage.sel?.name ?? "")
                     color: "white"
                     font.family: "Adwaita Sans"
                     font.pixelSize: 28
@@ -220,6 +225,7 @@ ShellRoot {
 
             Row {
                 anchors.horizontalCenter: parent.horizontalCenter
+                visible: !root.solo
                 spacing: 22
 
                 Repeater {
@@ -323,11 +329,113 @@ ShellRoot {
                 }
             }
 
+            // One rice: every style as a preview card, the selected one centred
+            ListView {
+                id: strip
+
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: root.solo && root.stylesShown
+                width: Math.min(win.width - 120, 1600)
+                height: 168
+                orientation: ListView.Horizontal
+                spacing: 16
+                clip: true
+                model: visible ? root.selStyles : []
+                currentIndex: root.styleIndex
+                highlightRangeMode: ListView.StrictlyEnforceRange
+                preferredHighlightBegin: width / 2 - 100
+                preferredHighlightEnd: width / 2 + 100
+                highlightMoveDuration: 220
+                boundsBehavior: Flickable.StopAtBounds
+                onCurrentIndexChanged: if (currentIndex !== root.styleIndex && currentIndex >= 0)
+                    root.styleIndex = currentIndex
+
+                delegate: Item {
+                    id: scard
+
+                    required property var modelData
+                    required property int index
+                    readonly property bool selected: root.onStyles && root.styleIndex === index
+                    readonly property bool isCurrent: modelData.name === root.selStyle
+
+                    width: 200
+                    height: strip.height
+                    opacity: selected ? 1 : 0.72
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 160
+                        }
+                    }
+
+                    Rectangle {
+                        id: sframe
+
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: 8
+                        width: parent.width
+                        height: width * 0.5625
+                        radius: 12
+                        color: "#" + scard.modelData.bg
+                        border.width: scard.selected ? 3 : 1
+                        border.color: scard.selected ? "#" + scard.modelData.accent : Qt.rgba(1, 1, 1, 0.15)
+                        clip: true
+                        scale: scard.selected ? 1.05 : 1
+                        Behavior on scale {
+                            NumberAnimation {
+                                duration: 180
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Image {
+                            anchors.fill: parent
+                            anchors.margins: sframe.border.width
+                            source: scard.modelData.shot ? "file://" + scard.modelData.shot : scard.modelData.wallpaper ? "file://" + scard.modelData.wallpaper : ""
+                            fillMode: Image.PreserveAspectCrop
+                            asynchronous: true
+                            sourceSize.width: 400
+                        }
+                    }
+                    Row {
+                        anchors.top: sframe.bottom
+                        anchors.topMargin: 12
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 7
+
+                        Rectangle {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 9
+                            height: 9
+                            radius: 4.5
+                            color: "#" + scard.modelData.accent
+                        }
+                        Text {
+                            text: scard.modelData.title + (scard.isCurrent ? "  ·  on" : "")
+                            color: scard.selected ? "white" : Qt.rgba(1, 1, 1, 0.7)
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 14
+                            font.weight: scard.selected ? Font.DemiBold : Font.Normal
+                        }
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onEntered: {
+                            root.onModes = false;
+                            root.onStyles = true;
+                            root.styleIndex = scard.index;
+                        }
+                        onClicked: root.apply()
+                    }
+                }
+            }
+
             // Styles for the selected rice, if it wears them
             Flow {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Math.min(win.width - 160, 1500)
-                visible: root.stylesShown
+                visible: root.stylesShown && !root.solo
                 spacing: 8
 
                 Repeater {
@@ -439,7 +547,7 @@ ShellRoot {
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "←/→ choose   ·   ↑/↓ rices" + (root.stylesShown ? " / styles" : "") + " / modes   ·   enter apply   ·   esc close"
+                text: "←/→ choose   ·   ↑/↓ " + (root.solo ? "styles / modes" : "rices" + (root.stylesShown ? " / styles" : "") + " / modes") + "   ·   enter apply   ·   esc close"
                 color: Qt.rgba(1, 1, 1, 0.4)
                 font.family: "Adwaita Sans"
                 font.pixelSize: 12

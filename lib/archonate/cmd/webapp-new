@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Make a web app: any site in its own window, in the launcher like a real app
+# archonate:args=[name] [address]
+. "$ARCHONATE_DIR/webapp.sh"
+set -uo pipefail
+name=${1:-} url=${2:-}
+[ -n "$name" ] || name=$(ask "Web app name") || exit 0
+[ -n "$name" ] || exit 0
+[ -n "$url" ] || url=$(ask "$name's address") || exit 0
+[ -n "$url" ] || exit 0
+case "$url" in http://* | https://*) ;; *) url="https://$url" ;; esac
+slug=$(slugify "$name")
+[ -n "$slug" ] || { notify "Web app" "Give it a name with letters or numbers in it"; exit 1; }
+host=$(sed -E 's#^https?://([^/:]+).*#\1#' <<<"$url")
+mkdir -p "$APPS" "$ICONS"
+
+# The site's own icon: the big touch icon if it has one, else its favicon
+icon=applications-internet
+tmp=$(mktemp)
+for path in /apple-touch-icon.png /apple-touch-icon-precomposed.png /favicon.png /favicon.ico; do
+    if curl -fsSL --max-time 6 -o "$tmp" "https://$host$path" 2>/dev/null &&
+        python3 -I - "$tmp" "$ICONS/webapp-$slug.png" 2>/dev/null <<'PY'
+import sys
+from PIL import Image
+im = Image.open(sys.argv[1])
+if im.format == "ICO":
+    im = im.ico.getimage(max(im.ico.sizes()))
+im.convert("RGBA").save(sys.argv[2])
+PY
+    then
+        icon="$ICONS/webapp-$slug.png"
+        break
+    fi
+done
+rm -f "$tmp"
+
+cat >"$APPS/archonate-webapp-$slug.desktop" <<DESK
+[Desktop Entry]
+Type=Application
+Name=$name
+Comment=$host, as an app
+Exec=$HOME/.local/bin/archonate webapp open $(exec_quote "$url")
+Icon=$icon
+Categories=Network;
+Terminal=false
+X-Archonate=webapp
+DESK
+refresh_launcher
+notify "Web app ready" "$name is in the launcher"
+echo "$name -> $url"

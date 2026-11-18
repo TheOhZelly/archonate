@@ -18,7 +18,11 @@ pick() {
 
 strip() { sed -E 's/^[^[:alnum:]]*[[:space:]]+//; s/[[:space:]]+[●○].*$//' <<<"$1"; }
 
+# One rice (the shipped setup): picking a rice means picking a style
+solo() { [ "$(rice_names | wc -l)" -le 1 ]; }
+
 menu_rice() {
+    solo && { menu_style; return; }
     local cur lines=() r c
     cur=$(current_rice)
     while read -r r; do
@@ -44,8 +48,9 @@ for s in json.load(sys.stdin)["styles"]: print(s["name"], s["title"], sep="\t")'
 import json, sys
 print(sum(1 for s in json.load(sys.stdin)["styles"] if s.get("mine")))')
     [ "$mine" -gt 0 ] && lines+=("󰆴   Remove a style you made	-remove")
-    c=$(pick "style" "${lines[@]}") || return
+    c=$(pick "style" "󰏘   Visual picker	-pick" "${lines[@]}") || return
     case "${c##*$'\t'}" in
+        -pick) "$A" theme pick ;;
         -remove) menu_style_remove ;;
         ?*) "$A" style set "${c##*$'\t'}" ;;
     esac
@@ -163,8 +168,10 @@ menu_power() {
 
 menu_main() {
     local c
+    local first="󰏘   Rice   ($rice)"
+    solo && first="󰏘   Style   ($("$ARCHONATE_DIR/cmd/style-current"))"
     c=$(pick "archonate" \
-        "󰏘   Rice   ($rice)" \
+        "$first" \
         "󰘮   Mode   ($(current_mode))" \
         "󰋩   Wallpaper" \
         "󰔡   Switches" \
@@ -178,7 +185,7 @@ menu_main() {
         "󰱱   Emoji" \
         "󰐥   Power") || return
     case "$c" in
-        *Rice*) menu_rice ;;
+        *Rice*|*Style*) menu_rice ;;
         *Mode*) menu_mode ;;
         *Wallpaper*) menu_wallpaper ;;
         *Switches*) menu_toggles ;;

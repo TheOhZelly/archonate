@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The web apps you made
+. "$ARCHONATE_DIR/webapp.sh"
+list_made webapp | cut -f1

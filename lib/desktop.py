@@ -1147,7 +1147,14 @@ def menu_data():
         parts = line.split("\t")
         sec, label, pkgs = parts[0], parts[1], parts[2]
         cat.setdefault(sec, []).append({"label": label, "pkgs": pkgs.split(),
+                                        "after": parts[3] if len(parts) > 3 else "",
                                         "installed": all(p in have for p in pkgs.split())})
+    # web apps and TUI launchers made with `archonate webapp|tui new`
+    made = {"webapp": [], "tui": []}
+    for kind in made:
+        for f in sorted((HOME / ".local/share/applications").glob(f"archonate-{kind}-*.desktop")):
+            name = next((l[5:] for l in f.read_text(errors="replace").splitlines() if l.startswith("Name=")), f.stem)
+            made[kind].append(name)
     try:
         binds = []
         import io, contextlib
@@ -1162,7 +1169,7 @@ def menu_data():
         "modes": sorted(f.stem for f in (HYPR / "modes").glob("*.lua")),
         "style": current_style(style_rice()), "styleRice": style_rice(), "styled": styled_rices(),
         "styles": [{"name": x["name"], "title": x["title"], "accent": x["accent"], "mine": x["mine"]} for x in styles()],
-        "keybinds": binds, "catalog": cat,
+        "keybinds": binds, "catalog": cat, "made": made,
     }))
 
 

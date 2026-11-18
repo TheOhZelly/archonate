@@ -36,7 +36,12 @@ icon() {
         Development) printf "󰗀" ;;
         Gaming) printf "󰊗" ;;
         AI) printf "󰚩" ;;
-        Apps) printf "󰀻" ;;
+        Service) printf "󰒍" ;;
+        Communication) printf "󰭹" ;;
+        Media) printf "󰝚" ;;
+        Productivity) printf "󰈙" ;;
+        Creative) printf "󰏘" ;;
+        Utilities) printf "󰖷" ;;
         Font) printf "󰛖" ;;
         *) printf " " ;;
     esac
@@ -114,20 +119,39 @@ run() { # install|remove pkgs... [--after cmd]
     read -rsn1 -p "Press any key to close."
 }
 
+style_menu() { # new styles, omarchy's, and fonts
+    local c
+    c=$(pick "style" "󰋩   New style from an image" "󰇚   Get omarchy's styles" "󰛖   Fonts") || return
+    case "$c" in
+        *image) "$BIN/archonate" style from ;;
+        *styles) term "Archonate · styles" "$BIN/archonate" style import ;;
+        *Fonts) section Font install ;;
+    esac
+}
+
 menu() { # install|remove
     local mode=$1 c secs=() s
-    while read -r s; do secs+=("$(icon "$s")   $s"); done < <(sections)
+    while read -r s; do
+        # fonts sit under Style when installing
+        [ "$mode" = install ] && [ "$s" = Font ] && continue
+        secs+=("$(icon "$s")   $s")
+    done < <(sections)
     if [ "$mode" = install ]; then
-        c=$(pick "install" "󰍉   Search packages (repos)" "󰏖   Search the AUR" "${secs[@]}") || return
+        c=$(pick "install" "󰏗   Package" "󰏖   AUR" "󰖟   Web App" "   TUI" "󰉼   Style" "${secs[@]}") || return
         case "$c" in
-            *"(repos)"*) search repo ;;
-            *AUR*) search aur ;;
+            *Package) search repo ;;
+            *AUR) search aur ;;
+            *"Web App") "$BIN/archonate" webapp new ;;
+            *TUI) "$BIN/archonate" tui new ;;
+            *Style) style_menu ;;
             ?*) section "${c##* }" install ;;
         esac
     else
-        c=$(pick "remove" "󰍉   Search installed packages" "${secs[@]}") || return
+        c=$(pick "remove" "󰍉   Search installed packages" "󰖟   Web App" "   TUI" "${secs[@]}") || return
         case "$c" in
             *"installed packages"*) search installed ;;
+            *"Web App") "$BIN/archonate" webapp remove ;;
+            *TUI) "$BIN/archonate" tui remove ;;
             ?*) section "${c##* }" remove ;;
         esac
     fi
@@ -136,6 +160,7 @@ menu() { # install|remove
 case "${1:-}" in
     menu-install) menu install ;;
     menu-remove) menu remove ;;
+    style-menu) style_menu ;;
     section) section "$2" "${3:-install}" ;;
     search) search "$2" ;;
     run) shift; run "$@" ;;

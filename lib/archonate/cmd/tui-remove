@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Remove a TUI launcher you made (no name: pick one)
+# archonate:args=[name]
+. "$ARCHONATE_DIR/webapp.sh"
+kind=tui
+mapfile -t made < <(list_made "$kind")
+[ ${#made[@]} -gt 0 ] || { notify "Nothing to remove" "You haven't made any TUI launchers"; exit 0; }
+name=${1:-}
+[ -n "$name" ] || name=$(pick_one "remove TUI" "${made[@]%%$'\t'*}") || exit 0
+[ -n "$name" ] || exit 0
+for m in "${made[@]}"; do
+    if [ "${m%%$'\t'*}" = "$name" ]; then
+        f=${m#*$'\t'}
+        slug=$(basename "$f" .desktop); slug=${slug#archonate-$kind-}
+        rm -f "$f" "$ICONS/$kind-$slug.png"
+        refresh_launcher
+        notify "Removed" "$name"
+        exit 0
+    fi
+done
+echo "no TUI called '$name'" >&2; exit 1

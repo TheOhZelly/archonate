@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Run a command in a terminal window of its own (what TUI launchers run)
+# archonate:args=<command>
+# archonate:hidden=true
+cmd=${1:?usage: archonate tui open <command>}
+class="tui-$(tr -cs 'a-zA-Z0-9' '-' <<<"${cmd%% *}" | sed 's/-*$//')"
+if command -v kitty >/dev/null; then exec setsid -f kitty --class "$class" sh -c "$cmd"
+elif command -v ghostty >/dev/null; then exec setsid -f ghostty --class="com.archonate.$class" -e sh -c "$cmd"
+elif command -v foot >/dev/null; then exec setsid -f foot --app-id "$class" sh -c "$cmd"
+elif command -v alacritty >/dev/null; then exec setsid -f alacritty --class "$class" -e sh -c "$cmd"
+elif command -v wezterm >/dev/null; then exec setsid -f wezterm start --class "$class" -- sh -c "$cmd"
+fi
+notify "No terminal" "Install one from SUPER + Escape > Install > Terminal"
+exit 1

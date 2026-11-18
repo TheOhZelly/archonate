@@ -79,7 +79,7 @@ Scope {
                 // Rebuild with fresh data, keeping where we are
                 const titles = root.stack.map(l => l.title);
                 root.stack = [{ title: "archonate", items: root.build("root") }];
-                const jump = { rice: "rices", theme: "rices", style: "styles", styles: "styles", ai: "ai", agent: "ai", mode: "modes", wallpaper: "wallpaper", toggles: "toggles", switches: "toggles", panels: "panels", capture: "capture", settings: "settings", keys: "keys", keybindings: "keys", install: "install", remove: "remove", update: "update", power: "power" }[root.pending];
+                const jump = { rice: root.data.rices.length > 1 ? "rices" : "styles", theme: root.data.rices.length > 1 ? "rices" : "styles", style: "styles", styles: "styles", ai: "ai", agent: "ai", mode: "modes", wallpaper: "wallpaper", toggles: "toggles", switches: "toggles", panels: "panels", capture: "capture", settings: "settings", keys: "keys", keybindings: "keys", install: "install", remove: "remove", update: "update", power: "power" }[root.pending];
                 if (jump) {
                     const it = root.stack[0].items.find(i => i.sub === jump);
                     if (it)
@@ -98,8 +98,9 @@ Scope {
         switch (name) {
         case "root":
             return [
-                { label: "Rice", icon: "palette", hint: d.rice, sub: "rices" },
-                ...((d.styled ?? []).includes(d.rice) && d.styles.length ? [{ label: "Style", icon: "style", hint: (d.styles.find(s => s.name === d.style)?.title ?? ""), sub: "styles" }] : []),
+                // One rice (the shipped setup): no rice entry, styles lead
+                ...(d.rices.length > 1 ? [{ label: "Rice", icon: "palette", hint: d.rice, sub: "rices" }] : []),
+                ...((d.styled ?? []).includes(d.rice) && d.styles.length ? [{ label: "Style", icon: "palette", hint: (d.styles.find(s => s.name === d.style)?.title ?? ""), sub: "styles" }] : []),
                 { label: "Mode", icon: "tune", hint: d.mode, sub: "modes" },
                 { label: "Wallpaper", icon: "wallpaper", sub: "wallpaper" },
                 { label: "Switches", icon: "toggle_on", sub: "toggles" },
@@ -131,6 +132,7 @@ Scope {
             ];
         case "styles":
             return [
+                { label: "Visual picker", icon: "view_carousel", hint: "with previews", run: ["theme", "pick"] },
                 { label: "New style from a wallpaper", icon: "add_photo_alternate", hint: "any image", run: ["style", "from"] },
                 ...d.styles.map(s => ({ label: s.title, color: "#" + s.accent, current: d.rice === d.styleRice && s.name === d.style, run: ["style", "set", s.name, d.styleRice ?? "archonate"] })),
                 ...(d.styles.some(s => s.mine) ? [{ label: "Remove a style you made", icon: "delete", sub: "styles-remove" }] : [])
@@ -168,14 +170,26 @@ Scope {
         case "keys":
             return d.keybinds.map(b => ({ label: b.label, icon: "keyboard", hint: b.keys.join("  or  "), info: true, path: b.group }));
         case "install":
+            // omarchy's order: find anything, make an app, then the curated lists
             return [
-                { label: "Search packages (repos)", icon: "search", run: ["install", "search"] },
-                { label: "Search the AUR", icon: "package_2", run: ["install", "aur"] },
-                ...Object.keys(d.catalog).map(s => ({ label: s, icon: sectionIcon(s), sub: "install:" + s, hint: d.catalog[s].filter(i => i.installed).length + "/" + d.catalog[s].length }))
+                { label: "Package", icon: "deployed_code", hint: "search the repos", run: ["install", "search"] },
+                { label: "AUR", icon: "package_2", hint: "search the AUR", run: ["install", "aur"] },
+                { label: "Web App", icon: "public", hint: "any site as an app", run: ["webapp", "new"] },
+                { label: "TUI", icon: "terminal", hint: "a terminal app as an app", run: ["tui", "new"] },
+                { label: "Style", icon: "auto_fix_high", sub: "install-style" },
+                ...Object.keys(d.catalog).filter(s => s !== "Font").map(s => ({ label: s, icon: sectionIcon(s), sub: "install:" + s, hint: d.catalog[s].filter(i => i.installed).length + "/" + d.catalog[s].length }))
+            ];
+        case "install-style":
+            return [
+                { label: "New style from an image", icon: "add_photo_alternate", hint: "any wallpaper", run: ["style", "from"] },
+                { label: "Get omarchy's styles", icon: "download", hint: "or update them", term: "archonate style import" },
+                { label: "Fonts", icon: "match_case", sub: "install:Font", hint: (d.catalog.Font ?? []).filter(i => i.installed).length + "/" + (d.catalog.Font ?? []).length }
             ];
         case "remove":
             return [
                 { label: "Search installed packages", icon: "search", run: ["remove", "search"] },
+                ...((d.made?.webapp ?? []).length ? [{ label: "Web App", icon: "public", sub: "remove-made:webapp", hint: String(d.made.webapp.length) }] : []),
+                ...((d.made?.tui ?? []).length ? [{ label: "TUI", icon: "terminal", sub: "remove-made:tui", hint: String(d.made.tui.length) }] : []),
                 ...Object.keys(d.catalog).filter(s => d.catalog[s].some(i => i.installed)).map(s => ({ label: s, icon: sectionIcon(s), sub: "remove:" + s }))
             ];
         case "update":
@@ -204,14 +218,18 @@ Scope {
             ];
         }
         if (name.startsWith("install:"))
-            return (d.catalog[name.slice(8)] ?? []).map(i => ({ label: i.label, icon: i.installed ? "check_circle" : "download", hint: i.installed ? "installed" : i.pkgs.join(" "), current: i.installed, run: i.installed ? null : ["install", ...i.pkgs], info: i.installed }));
+            return (d.catalog[name.slice(8)] ?? []).map(i => ({ label: i.label, icon: i.installed ? "check_circle" : "download", hint: i.installed ? "installed" : i.pkgs.join(" "), current: i.installed, run: i.installed ? null : ["install", ...i.pkgs, ...(i.after ? ["--after", i.after] : [])], info: i.installed }));
+        if (name.startsWith("remove-made:")) {
+            const kind = name.slice(12);
+            return (d.made?.[kind] ?? []).map(n => ({ label: n, icon: "delete", hint: kind === "webapp" ? "web app" : "TUI", run: [kind, "remove", n] }));
+        }
         if (name.startsWith("remove:"))
             return (d.catalog[name.slice(7)] ?? []).filter(i => i.installed).map(i => ({ label: i.label, icon: "delete", hint: i.pkgs.join(" "), run: ["remove", ...i.pkgs] }));
         return [];
     }
 
     function sectionIcon(s: string): string {
-        return { Browser: "language", Editor: "code", Terminal: "terminal", Development: "data_object", Gaming: "sports_esports", AI: "smart_toy", Apps: "apps", Font: "match_case" }[s] ?? "category";
+        return { Service: "deployed_code_history", Browser: "language", Editor: "code", Terminal: "terminal", Development: "data_object", Gaming: "sports_esports", AI: "smart_toy", Communication: "forum", Media: "play_circle", Productivity: "description", Creative: "brush", Utilities: "handyman", Font: "match_case" }[s] ?? "category";
     }
 
     // Every item one level down, for searching from the top

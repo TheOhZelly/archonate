@@ -1,22 +1,13 @@
 # Archonate install catalog: section	label	packages (space-separated; paru finds repo or AUR)	after (optional, runs with sudo after install)
-Browser	Brave	brave-bin
-Browser	Firefox	firefox
-Browser	Zen	zen-browser-bin
-Browser	Chromium	chromium
-Browser	Google Chrome	google-chrome
-Browser	LibreWolf	librewolf
-Editor	Zed	zed
-Editor	VS Code	visual-studio-code-bin
-Editor	Cursor	cursor-bin
-Editor	Neovim	neovim
-Editor	Helix	helix
-Editor	Sublime Text	sublime-text-4
-Editor	Emacs	emacs-wayland
-Terminal	Kitty	kitty
-Terminal	Ghostty	ghostty
-Terminal	Alacritty	alacritty
-Terminal	Foot	foot
-Terminal	WezTerm	wezterm
+Service	Tailscale	tailscale	systemctl enable --now tailscaled
+Service	Syncthing	syncthing	sudo -u "$SUDO_USER" XDG_RUNTIME_DIR="/run/user/$(id -u "$SUDO_USER")" systemctl --user enable --now syncthing
+Service	KDE Connect	kdeconnect
+Service	Printing (CUPS)	cups cups-pdf system-config-printer	systemctl enable --now cups.socket
+Service	Flatpak	flatpak
+Service	Dropbox	dropbox
+Service	Nextcloud	nextcloud-client
+Service	Proton VPN	proton-vpn-gtk-app
+Service	Mullvad VPN	mullvad-vpn-bin	systemctl enable --now mullvad-daemon
 Development	Node.js + npm	nodejs npm
 Development	Bun	bun
 Development	Deno	deno
@@ -26,34 +17,106 @@ Development	Rust (rustup)	rustup	sudo -u "$SUDO_USER" rustup default stable
 Development	Java (OpenJDK)	jdk-openjdk
 Development	Zig	zig
 Development	.NET SDK	dotnet-sdk
+Development	PHP + Composer	php composer
+Development	Ruby	ruby
+Development	Elixir	elixir
+Development	mise (any runtime, any version)	mise
 Development	Docker	docker docker-compose docker-buildx	systemctl enable --now docker.socket && usermod -aG docker "$SUDO_USER"
+Development	Podman	podman
+Development	Lazydocker	lazydocker
+Development	kubectl	kubectl
+Development	PostgreSQL	postgresql
+Development	DBeaver (databases)	dbeaver
+Development	Bruno (API client)	bruno-bin
 Development	GitHub CLI	github-cli
 Development	Lazygit	lazygit
+Editor	Zed	zed
+Editor	VS Code	visual-studio-code-bin
+Editor	Cursor	cursor-bin
+Editor	Neovim	neovim
+Editor	Helix	helix
+Editor	Micro	micro
+Editor	Sublime Text	sublime-text-4
+Editor	Emacs	emacs-wayland
+Editor	JetBrains Toolbox	jetbrains-toolbox
+Terminal	Kitty	kitty
+Terminal	Ghostty	ghostty
+Terminal	Alacritty	alacritty
+Terminal	Foot	foot
+Terminal	WezTerm	wezterm
+Terminal	Rio	rio
+Terminal	Warp	warp-terminal-bin
+Browser	Brave	brave-bin
+Browser	Firefox	firefox
+Browser	Zen	zen-browser-bin
+Browser	Chromium	chromium
+Browser	Google Chrome	google-chrome
+Browser	Vivaldi	vivaldi
+Browser	LibreWolf	librewolf
+Browser	Floorp	floorp-bin
+Browser	Microsoft Edge	microsoft-edge-stable-bin
+Browser	Tor Browser	torbrowser-launcher
+AI	Claude Code	claude-code
+AI	Codex	openai-codex-bin
+AI	OpenCode	opencode-bin
+AI	Gemini CLI	gemini-cli
+AI	Ollama (NVIDIA)	ollama-cuda	systemctl enable --now ollama
+AI	Ollama (AMD)	ollama-rocm	systemctl enable --now ollama
+AI	Ollama (CPU)	ollama	systemctl enable --now ollama
+AI	LM Studio	lmstudio-bin
 Gaming	Steam	steam
 Gaming	Lutris	lutris
 Gaming	Heroic (Epic, GOG)	heroic-games-launcher-bin
 Gaming	Prism Launcher (Minecraft)	prismlauncher
-Gaming	RetroArch	retroarch retroarch-assets-xmb
-Gaming	Bottles	bottles
+Gaming	Minecraft Launcher	minecraft-launcher
+Gaming	ProtonUp-Qt (Proton versions)	protonup-qt
+Gaming	Gamescope	gamescope
 Gaming	MangoHud + GameMode	mangohud lib32-mangohud gamemode lib32-gamemode
-Gaming	Xbox controllers (xpadneo)	xpadneo-dkms
+Gaming	Bottles	bottles
+Gaming	RetroArch	retroarch retroarch-assets-xmb
+Gaming	PCSX2 (PS2)	pcsx2
+Gaming	Dolphin (GameCube, Wii)	dolphin-emu
 Gaming	Moonlight (game streaming)	moonlight-qt
-AI	Ollama (CUDA)	ollama-cuda	systemctl enable --now ollama
-AI	LM Studio	lmstudio-bin
-AI	Claude Code	claude-code
-Apps	Obsidian	obsidian
-Apps	Signal	signal-desktop
-Apps	Bitwarden	bitwarden
-Apps	Tailscale	tailscale	systemctl enable --now tailscaled
-Apps	Dropbox	dropbox
-Apps	OBS Studio	obs-studio
-Apps	Vesktop (Discord)	vesktop-bin
-Apps	LibreOffice	libreoffice-fresh
-Apps	GIMP	gimp
-Apps	Krita	krita
-Apps	Blender	blender
-Apps	VLC	vlc
-Apps	mpv	mpv
+Gaming	Xbox controllers (xpadneo)	xpadneo-dkms
+Communication	Vesktop (Discord)	vesktop-bin
+Communication	Discord	discord
+Communication	Signal	signal-desktop
+Communication	Telegram	telegram-desktop
+Communication	Element (Matrix)	element-desktop
+Communication	Slack	slack-desktop
+Communication	Zoom	zoom
+Communication	Thunderbird	thunderbird
+Media	Spotify	spotify-launcher
+Media	VLC	vlc
+Media	mpv	mpv
+Media	Jellyfin Media Player	jellyfin-media-player
+Media	OBS Studio	obs-studio
+Media	Kdenlive (video editing)	kdenlive
+Media	Audacity	audacity
+Media	yt-dlp	yt-dlp
+Productivity	Obsidian	obsidian
+Productivity	Logseq	logseq-desktop-bin
+Productivity	LibreOffice	libreoffice-fresh
+Productivity	OnlyOffice	onlyoffice-bin
+Productivity	Zotero	zotero-bin
+Productivity	Xournal++ (notes, PDFs)	xournalpp
+Productivity	Calibre (ebooks)	calibre
+Creative	GIMP	gimp
+Creative	Krita	krita
+Creative	Inkscape	inkscape
+Creative	Blender	blender
+Creative	Darktable (photos)	darktable
+Creative	Pinta	pinta
+Utilities	Bitwarden	bitwarden
+Utilities	1Password	1password
+Utilities	KeePassXC	keepassxc
+Utilities	LocalSend (share with phones)	localsend-bin
+Utilities	qBittorrent	qbittorrent
+Utilities	Mission Center (system monitor)	mission-center
+Utilities	Disks	gnome-disk-utility
+Utilities	GParted	gparted
+Utilities	Impression (USB writer)	impression
+Utilities	File Roller (archives)	file-roller
 Font	Cascadia Code Nerd	ttf-cascadia-code-nerd
 Font	Fira Code Nerd	ttf-firacode-nerd
 Font	Iosevka Nerd	ttf-iosevka-nerd

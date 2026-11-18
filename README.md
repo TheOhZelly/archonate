@@ -68,7 +68,7 @@ CachyOS only for `cachy-update`; without them those steps are skipped.
 | Key | What it does |
 | --- | --- |
 | **Super + /** | The cheat sheet: every shortcut, searchable |
-| **Super + Escape** | The menu: styles, wallpapers, modes, settings, install apps |
+| **Super + Escape** | The menu: styles, wallpapers, modes, settings, and Install: 120+ curated apps, any package, web apps, TUIs |
 | **Super + F9** | Pick a style, with previews |
 | **Super + I** | Settings |
 | **Super + Return** | Terminal |
@@ -96,6 +96,8 @@ archonate style from ~/Pictures/x.jpg   # a new style made from any wallpaper
 archonate mode set gaming               # normal, gaming, minimal
 archonate toggle nightlight             # dnd caffeine gaming widgets shader screensaver
 archonate wallpaper pick                # wallpaper switcher (also next, prev)
+archonate install gaming                # a curated list (or package names, or: search, aur)
+archonate webapp new Notion notion.so   # any site as an app in the launcher (tui new for terminal apps)
 archonate settings wifi                 # the Settings app, at a page
 archonate install gaming                # install or remove apps by section
 archonate update                        # snapshot, then update everything
