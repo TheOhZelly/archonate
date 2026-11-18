@@ -1,4 +1,6 @@
-local scheme = require("scheme.current")
+-- Colours for shadows and borders: the generated scheme if there is one, else the shipped default
+local ok, scheme = pcall(require, "scheme.current")
+if not ok then scheme = require("scheme.default") end
 
 return {
     ------------------
