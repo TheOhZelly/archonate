@@ -57,7 +57,16 @@ case "${1:-status}" in
         strip "$new"
         # the wallpaper: the logo under the menu, on the built-in style's background
         mkdir -p "$(dirname "$wall")"
-        python3 -I "$hypr/lib/archonate/boot-splash.py" --size 1920x1080 --y 0.86 "$hypr/lib/archonate/logo.txt" "$wall" >/dev/null
+        # Sized for this screen's boot resolution: Limine's margins are in
+        # pixels, and the logo sits inside the bottom margin, where the menu
+        # never writes, so a long menu can't run into it.
+        res=$(tr ',' 'x' </sys/class/graphics/fb0/virtual_size 2>/dev/null || true)
+        [[ $res =~ ^[0-9]+x[0-9]+$ ]] || res=1920x1080
+        H=${res#*x}
+        margin=$((H * 15 / 100))
+        python3 -I "$hypr/lib/archonate/boot-splash.py" --size "$res" --logo-height 0.075 \
+            --y "$(awk -v h="$H" -v m="$margin" 'BEGIN{printf "%.4f", (h - m * 0.25) / h}')" \
+            "$hypr/lib/archonate/logo.txt" "$wall" >/dev/null
         hash=$(b2sum "$wall" | cut -d' ' -f1)
         rel=${wall#"$esp"}
         # comment out the settings of yours this replaces (global section only: before the first entry)
@@ -80,7 +89,7 @@ term_background_bright: 2d3135
 term_foreground_bright: e3e6e7
 term_palette: 141618;c2756e;7f948a;b3a68c;8fa4b2;a294b5;8fa4b2;c8ccce
 term_palette_bright: 656c71;d6948d;9fb3a9;cbbe9f;aebfcb;b9adc9;aebfcb;e3e6e7
-term_margin: 96
+term_margin: $margin
 term_margin_gradient: 0
 EOF
             echo "$mark_end"
