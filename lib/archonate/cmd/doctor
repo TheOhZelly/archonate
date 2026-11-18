@@ -84,7 +84,7 @@ for r in $(rice_names); do
 done
 pass "$(rice_names | wc -l) rices have all their files"
 grep -q '^include rice.conf' "$HOME/.config/kitty/kitty.conf" 2>/dev/null && pass "kitty follows the rice" || warn "kitty doesn't include rice.conf" "echo 'include rice.conf' >> ~/.config/kitty/kitty.conf"
-grep -q 'hypr-rice/p10k.zsh\|lib/prompt.zsh' "$HOME/.zshrc" 2>/dev/null && pass "zsh prompt follows the rice" || warn "the zsh prompt hook is missing" "run ~/.config/hypr/install.sh"
+grep -q 'lib/zsh/archonate.zsh\|hypr-rice/p10k.zsh\|lib/prompt.zsh' "$HOME/.zshrc" 2>/dev/null && pass "zsh prompt follows the rice" || warn "the zsh prompt hook is missing" "run ~/.config/hypr/install.sh"
 
 # ---- config ------------------------------------------------------------------
 section "Hyprland"
@@ -130,7 +130,8 @@ if qs -p "$shell" ipc show >/dev/null 2>&1; then
     for fn in panel lock toggleCenter screensaver notifKeys menu; do
         grep -q "function $fn(" <<<"$fns" || fail "$rice's shell has no '$fn' (IPC)" "archonate shell restart"
     done
-    errs=$(qs log -p "$shell/shell.qml" 2>/dev/null | grep -E "ERROR|TypeError|ReferenceError|is not a type|unavailable|Cannot create delegate|was not initialized" | grep -v "dbus" | tail -3)
+    # only since the last successful (re)load: a reload mid-edit leaves errors that no longer apply
+    errs=$(qs log -p "$shell/shell.qml" 2>/dev/null | awk '/Configuration Loaded/{buf=""; next} {buf=buf $0 "\n"} END{printf "%s", buf}' | grep -E "ERROR|TypeError|ReferenceError|is not a type|unavailable|Cannot create delegate|was not initialized" | grep -v "dbus" | tail -3)
     [ -z "$errs" ] && pass "no errors in $rice's shell log" || warn "errors in $rice's shell log: $(echo "$errs" | tail -1 | sed 's/\x1b\[[0-9;]*m//g' | cut -c1-110)" "qs log -p $shell/shell.qml"
 else
     fail "$rice's desktop shell isn't running" "archonate shell restart"
