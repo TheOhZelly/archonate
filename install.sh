@@ -73,7 +73,7 @@ step "Packages"
 repo=(
     # desktop
     hyprland uwsm quickshell fuzzel kitty thunar hyprsunset hyprpicker xdg-utils gtk3
-    qt6-declarative qt6-multimedia
+    qt6-declarative qt6-multimedia qt6-imageformats
     # sound, network, bluetooth, power (what the bar's panels talk to)
     pipewire pipewire-audio wireplumber networkmanager bluez-utils power-profiles-daemon upower
     brightnessctl ddcutil
