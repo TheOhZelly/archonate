@@ -19,7 +19,11 @@ set -euo pipefail
 user=${SUDO_USER:-}
 hypr=${ARCHONATE_HYPR:-$(cd "$(dirname "$0")/.." && pwd)}
 defaults=${ARCHONATE_LIMINE_DEFAULTS:-/etc/default/limine}
-[ -r "$defaults" ] && . "$defaults"
+# only the two settings needed, read rather than sourced (the file holds bash
+# arrays like KERNEL_CMDLINE[default]+=... that aren't ours to evaluate)
+setting() { [ -r "$defaults" ] && sed -n "s/^[[:space:]]*$1=[\"']\{0,1\}\([^\"']*\)[\"']\{0,1\}[[:space:]]*\$/\1/p" "$defaults" | tail -1; }
+ESP_PATH=$(setting ESP_PATH)
+ENABLE_ENROLL_LIMINE_CONFIG=$(setting ENABLE_ENROLL_LIMINE_CONFIG)
 esp=${ESP_PATH:-/boot}
 conf="$esp/limine.conf"
 mark_begin="# >>> archonate boot theme (lib/setup-boot.sh; undo: sudo setup-boot.sh undo)"
