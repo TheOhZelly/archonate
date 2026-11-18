@@ -35,8 +35,7 @@ hl.bind("SUPER + CTRL + Comma", hl.dsp.exec_cmd(home .. "/.local/bin/archonate n
 -- Wallpaper switcher (carousel of this rice's wallpapers)
 hl.bind("SUPER + CTRL + W", hl.dsp.exec_cmd(home .. "/.local/bin/archonate wallpaper pick"))
 
--- Effects (standalone rices): SUPER + F11 screen shader, SUPER + F12 desktop widget
-hl.bind("SUPER + F11", hl.dsp.exec_cmd(home .. "/.local/bin/archonate toggle shader"))
+-- Effects: SUPER + F12 desktop widget
 hl.bind("SUPER + F12", hl.dsp.exec_cmd(home .. "/.local/bin/archonate toggle widgets"))
 
 -- Rice Settings app (toggle): SUPER + I

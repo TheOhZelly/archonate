@@ -222,7 +222,7 @@ create_bind("SUPER + SHIFT + W", arch("wallpaper next"))
 create_bind("SUPER + SHIFT + ALT + W", arch("wallpaper prev"))
 create_bind(
     vars.kbClipboardPasteLatest,
-    hl.dsp.exec_cmd('sleep 0.5s && ydotool type -d 1 "$(cliphist list | head -1 | cliphist decode)"'),
+    hl.dsp.exec_cmd('sleep 0.3s && wtype -d 1 -- "$(cliphist list | head -1 | cliphist decode)"'), -- types it out, for fields that block paste
     locked
 )
 

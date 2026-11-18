@@ -19,7 +19,6 @@ Scope {
     readonly property bool caffeine: cfg.globalVal("caffeine", false)
     readonly property bool gaming: mode === "gaming"
     readonly property bool widgets: effects.widgets ?? true
-    readonly property bool shader: effects.shader ?? true
     readonly property bool screensaver: effects.screensaver ?? true
     readonly property bool intros: effects.intros ?? true
 
@@ -30,7 +29,6 @@ Scope {
         ["caffeine", "Keep awake", "coffee", "bedtime"],
         ["gaming", "Gaming mode", "sports_esports", "sports_esports"],
         ["widgets", "Desktop widget", "widgets", "widgets"],
-        ["shader", "Screen shader", "auto_awesome", "auto_awesome"],
         ["screensaver", "Screensaver", "animation", "animation"],
         ["intros", "Wallpaper intros", "movie", "movie"]
     ]
@@ -79,7 +77,6 @@ Scope {
     onCaffeineChanged: check()
     onGamingChanged: check()
     onWidgetsChanged: check()
-    onShaderChanged: check()
     onScreensaverChanged: check()
     onIntrosChanged: check()
 

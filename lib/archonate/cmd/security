@@ -247,7 +247,7 @@ update() { # virus signatures (root: freshclam writes /var/lib/clamav)
         sudo systemctl restart clamav-freshclam.service || return 1
         # its first download is a few hundred MB: follow it until all three databases report in
         for _ in $(seq 600); do
-            mapfile -t lines < <(sudo journalctl -u clamav-freshclam.service --since "$since" -o cat --no-pager 2>/dev/null)
+            mapfile -t lines < <(sudo journalctl -u clamav-freshclam.service _COMM=freshclam --since "$since" -o cat --no-pager 2>/dev/null | grep -v "^Update process terminated")
             for line in "${lines[@]:$seen}"; do printf '  %s\n' "$line"; done
             seen=${#lines[@]}
             n=$(printf '%s\n' "${lines[@]}" | grep -cE '(daily|main|bytecode)\.c[vl]d (database is up-to-date|updated)')

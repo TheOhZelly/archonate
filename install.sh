@@ -78,7 +78,7 @@ repo=(
     pipewire pipewire-audio wireplumber networkmanager bluez-utils power-profiles-daemon upower
     brightnessctl ddcutil
     # capture, clipboard, OCR, media
-    grim slurp wl-clipboard cliphist tesseract tesseract-data-eng ffmpeg
+    grim slurp wl-clipboard cliphist wtype tesseract tesseract-data-eng ffmpeg
     # what the scripts lean on
     python python-pillow jq fzf libnotify dart-sass btop fastfetch pciutils pacman-contrib git curl
     # looks
