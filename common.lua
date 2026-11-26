@@ -25,6 +25,8 @@ hl.window_rule({ match = { class = "archonate-term" }, float = true, center = tr
 -- The Archonate menu: everything the desktop can do, searchable
 hl.bind("SUPER + Escape", hl.dsp.exec_cmd(home .. "/.local/bin/archonate menu"))
 hl.bind("SUPER + slash", hl.dsp.exec_cmd(home .. "/.local/bin/archonate keys"))
+hl.bind("SUPER + BackSpace", hl.dsp.exec_cmd(home .. "/.local/bin/archonate layout next"))
+hl.bind("SUPER + H", hl.dsp.exec_cmd(home .. "/.local/bin/archonate window minimize"))
 
 -- Grab text from the screen (OCR) to the clipboard
 hl.bind("SUPER + CTRL + Print", hl.dsp.exec_cmd(home .. "/.local/bin/archonate capture text"))

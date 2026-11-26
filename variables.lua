@@ -110,7 +110,8 @@ return {
     kbSystemMonitorWs          = "CTRL + SHIFT + Escape",
     kbMusicWs                  = "SUPER + M",
     kbCommunicationWs          = "SUPER + D",
-    kbTodoWs                   = "SUPER + R",
+    kbTodoWs                   = "",  -- (was SUPER + R; Todoist isn't part of the setup)
+    kbObsStudio                = "SUPER + R",
 
     -- Apps
     kbTerminal                 = "SUPER + Return",

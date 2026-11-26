@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Bring an app to the front if it's open, or open it (what app keys like SUPER+R use)
+# archonate:args=<class regex> <command...>
+re=${1:?usage: archonate focus <class regex> <command...>}; shift
+[ $# -gt 0 ] || { echo "usage: archonate focus <class regex> <command...>" >&2; exit 1; }
+addr=$(hyprctl clients -j | python3 -c '
+import json, re, sys
+for c in json.load(sys.stdin):
+    if c.get("mapped", True) and re.search(sys.argv[1], c["class"] or c["initialClass"] or ""):
+        print(c["address"]); break' "$re")
+if [ -n "$addr" ]; then
+    hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })" >/dev/null
+else
+    setsid -f "$@" >/dev/null 2>&1
+fi

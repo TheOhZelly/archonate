@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Set the window layout for the whole desktop
+# archonate:args=<tiling|scrolling|floating>
+python3 "$ARCHONATE_PY" layout set "${1:?usage: archonate layout set <tiling|scrolling|floating>}"

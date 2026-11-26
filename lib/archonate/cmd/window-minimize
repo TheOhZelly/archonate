@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Minimize the focused window (or one by address) to the dock, in the floating layout (SUPER + H)
+# archonate:args=[address]
+python3 "$ARCHONATE_PY" window-minimize "$@"

@@ -73,6 +73,7 @@ CachyOS only for `cachy-update`; without them those steps are skipped.
 | **Super + Return** | Terminal |
 | **Super + W** / **E** / **Shift + E** | Your default browser, file manager, editor |
 | **Super + Q** | Close the window |
+| **Super + Backspace** | Window layout: tiling, scrolling, or floating with a dock (**Super + H** minimizes to it) |
 | **Super + A** | Your coding agent, which already knows Archonate: just ask |
 
 The cheat sheet opens by itself the first time you log in.

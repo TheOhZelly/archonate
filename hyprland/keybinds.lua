@@ -166,6 +166,7 @@ create_bind(vars.kbEditor, app(vars.editor, "editor"))
 create_bind(vars.kbFileExplorer, app(vars.fileExplorer, "files"))
 create_bind(vars.kbAudioSettings, app(vars.audioSettings, "audio"))
 create_bind(vars.kbClaudeApp, arch("claude-open"))
+create_bind(vars.kbObsStudio, arch("focus '^(com\\.obsproject\\.Studio|obs)$' obs"))
 -- Your coding agent (archonate agent default), and "what does this error mean?"
 -- for whatever you just copied
 create_bind(vars.kbCodingAgent, arch("agent"))

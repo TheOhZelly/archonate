@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The window layouts (the one in use marked)
+cur=$(python3 "$ARCHONATE_PY" layout current)
+for l in tiling scrolling floating; do [ "$l" = "$cur" ] && echo "$l  ●" || echo "$l"; done

@@ -57,6 +57,11 @@ Scope {
         theme: root.theme
     }
 
+    // The floating layout's dock (SUPER + Backspace to floating)
+    Dock {
+        theme: root.theme
+    }
+
     // The keyboard cheat sheet (SUPER + / / archonate keys)
     Cheatsheet {
         id: cheatsheet
@@ -204,6 +209,10 @@ Scope {
         // The Archonate menu; section "" toggles it, otherwise opens there
         function menu(section: string): void {
             archMenu.show(section);
+        }
+        // A short popup: archonate layout uses it ("Scrolling", "Floating")
+        function announce(icon: string, text: string): void {
+            osd.announce(icon, text);
         }
         // The keyboard cheat sheet; a second call closes it
         function keys(): void {

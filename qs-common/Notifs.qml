@@ -50,7 +50,7 @@ Scope {
 
     function clearAll(): void {
         for (const n of server.trackedNotifications.values.slice())
-            n.dismiss();
+            closeIfOpen(n);
         popups = [];
     }
 
@@ -62,7 +62,14 @@ Scope {
         if (root.theme.notifDismissSound)
             Quickshell.execDetached(["pw-play", root.theme.notifDismissSound]);
         dropPopup(n);
-        n.dismiss();
+        closeIfOpen(n);
+    }
+
+    // An action can make the app close its own notification first (and a
+    // double click can land twice): only close what is still open.
+    function closeIfOpen(n: var): void {
+        if (n && n.tracked)
+            n.dismiss();
     }
 
     // The notification's own "default" action (open the chat, the page...)

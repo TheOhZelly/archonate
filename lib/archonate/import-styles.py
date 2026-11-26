@@ -123,7 +123,9 @@ for t in sorted(p for p in SRC.iterdir() if p.is_dir()):
     (out / "backgrounds").mkdir(parents=True)
     palette, ansi = convert(c)
     title = " ".join(w.capitalize() for w in t.name.split("-"))
-    for f in sorted((t / "backgrounds").iterdir()):
+    # (newer theme sources ship no wallpapers: then the style gets ours only)
+    src_bg = t / "backgrounds"
+    for f in sorted(src_bg.iterdir()) if src_bg.is_dir() else []:
         if f.is_file() and f.suffix.lower() in IMG and not (SKIP_LOGO and SKIP_LOGO in f.name.lower()) and not f.is_symlink():
             shutil.copy2(f, out / "backgrounds" / f.name)
     # Animated intros: backgrounds/intros/<stem>.mp4 plays once, then the still

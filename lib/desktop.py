@@ -298,6 +298,7 @@ def apply_apps(desk, rice=None):
             p.unlink()
         write("zed/themes/archonate.json", gen_replace_dynamic(c, TEMPLATES / "zed.json", "dark"))
     safely("zed", zed)
+    safely("obs", lambda: apply_obs(desk, rice or active_rice()))
 
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
@@ -435,6 +436,77 @@ def claude_css(look, acc, hi, text):
     css.append(f"button:focus-visible,a:focus-visible,[role=tab]:focus-visible,[role=menuitem]:focus-visible"
                f"{{outline:{max(1, bw)}px solid #{acc} !important;outline-offset:1px}}")
     return css
+
+
+def apply_obs(desk, rice):
+    """OBS Studio's theme 'Archonate': a variant of its built-in Yami with this
+    rice's palette, accent, font, border weight and corners, written to
+    ~/.config/obs-studio/themes/Archonate.ovt. Pick it once in OBS (Settings >
+    Appearance: theme Yami, style Archonate); later rice or style switches
+    rewrite it, and OBS shows them after a restart. Skipped without OBS."""
+    cfg = HOME / ".config/obs-studio"
+    if not cfg.is_dir():
+        return
+    p = desk["palette"]
+    bg, surf, hi, text, dim, acc = p["bg"], p["surface"], p["surface_hi"], p["text"], p["text_dim"], p["accent"]
+    look = rice_look(rice)
+    k = 0.0
+    while contrast(mix(dim, text, k), surf) < 4.5 and k < 1:  # muted text stays readable
+        k += 0.05
+    dim = mix(dim, text, min(k, 1.0))
+    on_acc = bg if contrast(acc, bg) >= contrast(acc, text) else text
+    border = look.get("border", mix(hi, text, 0.2) + "ff")
+    rgba = f"rgba({int(border[0:2], 16)}, {int(border[2:4], 16)}, {int(border[4:6], 16)}, {int(border[6:8], 16)})"
+    bw = max(1, look.get("borderWidth", 1))
+    r = round(min(look.get("radius", 8), 10) * 0.6)
+    font = look.get("font") or "sans-serif"
+    v = {
+        # Yami's grey ramp, lightest (1) to darkest (8), from the rice's surfaces
+        "grey1": mix(hi, text, 0.25), "grey2": mix(hi, text, 0.12), "grey3": hi, "grey4": mix(surf, hi, 0.5),
+        "grey5": surf, "grey6": mix(bg, surf, 0.5), "grey7": bg, "grey8": mix(bg, "000000", 0.35),
+        # its blues are the accent everywhere (selection, links, sliders)
+        "blue1": mix(acc, text, 0.4), "blue2": mix(acc, text, 0.2), "blue3": acc, "blue4": mix(acc, bg, 0.25),
+        "blue5": mix(acc, bg, 0.45), "blue6": mix(acc, bg, 0.65),
+        "white1": text, "white2": mix(text, dim, 0.3), "white3": mix(text, dim, 0.5), "white4": mix(text, dim, 0.75),
+        "white5": dim,
+    }
+    lines = "\n".join(f"    --{n}: #{c};" for n, c in v.items())
+    css = f"""/* Archonate: written on every rice/style switch ({rice}); edits are overwritten. */
+
+@OBSThemeMeta {{
+    name: 'Archonate';
+    id: 'com.archonate.Yami.Archonate';
+    extends: 'com.obsproject.Yami';
+    author: 'Archonate';
+    dark: 'true';
+}}
+
+@OBSThemeVars {{
+{lines}
+    --text_muted: #{dim};
+    --border_color: {rgba};
+    --input_border: {rgba};
+    --input_border_hover: #{mix(acc, text, 0.2)};
+    --input_border_width: {bw}px;
+    --button_border: {rgba};
+    --button_border_hover: #{acc};
+    --highlight_color: #{acc};
+}}
+
+QWidget {{
+    font-family: '{font}', sans-serif;
+}}
+
+QPushButton, QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTextEdit, QPlainTextEdit,
+QListWidget, QTreeView, QTableView, QMenu, QToolTip {{
+    border-radius: {r}px;
+}}
+
+QMenu::item:selected, QListWidget::item:selected {{
+    color: #{on_acc};
+}}
+"""
+    atomic_write(cfg / "themes" / "Archonate.ovt", css)
 
 
 def apply_claude(rice, desk):
@@ -1146,7 +1218,7 @@ def menu_data():
     except Exception:
         binds = []
     print(json.dumps({
-        "rice": active_rice(), "mode": active_mode(), "rices": rices,
+        "rice": active_rice(), "mode": active_mode(), "layout": current_layout(), "rices": rices,
         "modes": sorted(f.stem for f in (HYPR / "modes").glob("*.lua")),
         "style": current_style(style_rice()), "styleRice": style_rice(), "styled": styled_rices(),
         "styles": [{"name": x["name"], "title": x["title"], "accent": x["accent"], "mine": x["mine"]} for x in styles()],
@@ -1335,6 +1407,8 @@ def symlink_rice():
 
 EXTRA_BINDS = [
     ("Desktop", "SUPER + slash", "This cheat sheet"),
+    ("Windows", "SUPER + BackSpace", "Layout: tiling, scrolling, floating"),
+    ("Windows", "SUPER + H", "Minimize to the dock (floating layout)"),
     ("Desktop", "SUPER + Escape", "Archonate menu (everything)"),
     ("Desktop", "SUPER + F9", "Style picker"),
     ("Desktop", "SUPER + F10", "Mode picker"),
@@ -1723,7 +1797,7 @@ def status_info():
 #         post-update, post-boot.
 
 HOOKS = HOME / ".config/archonate/hooks"
-HOOK_EVENTS = ["theme-set", "mode-set", "style-set", "toggle", "post-update", "post-boot"]
+HOOK_EVENTS = ["theme-set", "mode-set", "style-set", "layout-set", "toggle", "post-update", "post-boot"]
 
 
 def run_hook(event, *args):
@@ -1738,6 +1812,124 @@ def run_hook(event, *args):
         r = subprocess.run(["bash", str(s), *args])
         if r.returncode:
             print(f"archonate: hook failed: {s}", file=sys.stderr)
+
+
+# ---- window layouts ----------------------------------------------------------
+# tiling (dwindle), scrolling (Hyprland's own) or floating (every window floats,
+# with a dock), for the whole desktop. hyprland/layouts.lua reads LAYOUT_FILE at
+# config load; switching here applies it live. Floating = archonate_float_rule
+# on (new windows) + floating the open ones; each window it floats is tagged
+# archonate-floated, so leaving floating tiles exactly those again.
+
+LAYOUTS = ["tiling", "scrolling", "floating"]
+LAYOUT_FILE = STATE / "layout"
+LAYOUT_TAG = "archonate-floated"
+MINIMIZED = "special:minimized"
+
+
+def current_layout():
+    try:
+        name = LAYOUT_FILE.read_text().strip()
+    except OSError:
+        return "tiling"
+    return name if name in LAYOUTS else "tiling"
+
+
+def _hyprctl(*args):
+    return subprocess.run(["hyprctl", *args], capture_output=True, text=True).stdout
+
+
+def _clients():
+    try:
+        return json.loads(_hyprctl("clients", "-j"))
+    except json.JSONDecodeError:
+        return []
+
+
+def _dispatch(expr):
+    _hyprctl("dispatch", expr)
+
+
+def _active_ws():
+    try:
+        return json.loads(_hyprctl("activeworkspace", "-j"))["id"]
+    except (json.JSONDecodeError, KeyError):
+        return 1
+
+
+def _keeps_floating(c):
+    """Windows that float on their own (picture-in-picture, dialogs and apps
+    the rules float): leaving floating mode doesn't tile them."""
+    tags = c.get("tags") or []
+    return c.get("pinned") or any(t.rstrip("*").startswith(("float", "xwl_popup")) for t in tags)
+
+
+def _float_all():
+    _hyprctl("eval", "_G.archonate_float_rule:set_enabled(true)")
+    for c in _clients():
+        if c.get("mapped", True) and not c["floating"] and not c["workspace"]["name"].startswith("special"):
+            a = c["address"]
+            _dispatch(f"hl.dsp.window.tag({{ tag = '+{LAYOUT_TAG}', window = 'address:{a}' }})")
+            _dispatch(f"hl.dsp.window.float({{ action = 'set', window = 'address:{a}' }})")
+
+
+def _tile_back():
+    _hyprctl("eval", "_G.archonate_float_rule:set_enabled(false)")
+    ws = _active_ws()
+    for c in _clients():
+        a = c["address"]
+        if c["workspace"]["name"] == MINIMIZED:  # nothing shows them without the dock
+            _dispatch(f"hl.dsp.window.move({{ workspace = '{ws}', window = 'address:{a}', follow = false }})")
+        tags = [t.rstrip("*") for t in c.get("tags") or []]
+        if LAYOUT_TAG in tags:
+            _dispatch(f"hl.dsp.window.tag({{ tag = '-{LAYOUT_TAG}', window = 'address:{a}' }})")
+            if c["floating"] and not _keeps_floating(c):
+                _dispatch(f"hl.dsp.window.float({{ action = 'unset', window = 'address:{a}' }})")
+
+
+LAYOUT_LOOK = {"tiling": ("dashboard", "Tiling"), "scrolling": ("view_column", "Scrolling"),
+               "floating": ("filter_none", "Floating")}
+
+
+def layout_set(name):
+    if name not in LAYOUTS:
+        raise SystemExit(f"unknown layout {name!r}; one of {', '.join(LAYOUTS)}")
+    prev = current_layout()
+    atomic_write(LAYOUT_FILE, name + "\n")
+    if prev == "floating" and name != "floating":
+        _tile_back()
+    _hyprctl("eval", f'hl.config({{ general = {{ layout = "{"scrolling" if name == "scrolling" else "dwindle"}" }} }})')
+    if name == "floating" and prev != "floating":
+        _float_all()
+    icon, label = LAYOUT_LOOK[name]
+    run("qs", "-p", str(shell_dir(active_rice())), "ipc", "call", "rice", "announce", icon, label)
+    run_hook("layout-set", name)
+
+
+def layout_next():
+    layout_set(LAYOUTS[(LAYOUTS.index(current_layout()) + 1) % len(LAYOUTS)])
+
+
+def window_minimize(address=None):
+    """Park a window in the floating dock (a hidden workspace)."""
+    if current_layout() != "floating":
+        run("notify-send", "-a", "archonate", "Minimize works in floating mode",
+            "Switch with Super + Backspace; the dock holds minimized windows.")
+        return
+    target = f"address:{address}" if address else "active"
+    if not address:
+        w = json.loads(_hyprctl("activewindow", "-j") or "{}")
+        if not w.get("address"):
+            return
+        target = f"address:{w['address']}"
+    _dispatch(f"hl.dsp.window.move({{ workspace = '{MINIMIZED}', window = '{target}', follow = false }})")
+
+
+def window_restore(address):
+    """Back from the dock to the workspace you're on, focused."""
+    ws = _active_ws()
+    _dispatch(f"hl.dsp.window.move({{ workspace = '{ws}', window = 'address:{address}', follow = false }})")
+    _dispatch(f"hl.dsp.focus({{ window = 'address:{address}' }})")
 
 
 # ---- toggles -----------------------------------------------------------------
@@ -1840,6 +2032,16 @@ def main(argv):
         schedule_status()
     elif len(argv) == 2 and argv[1] == "menu-data":
         menu_data()
+    elif len(argv) == 3 and argv[1] == "layout" and argv[2] == "next":
+        layout_next()
+    elif len(argv) == 3 and argv[1] == "layout" and argv[2] == "current":
+        print(current_layout())
+    elif len(argv) == 4 and argv[1] == "layout" and argv[2] == "set":
+        layout_set(argv[3])
+    elif len(argv) in (2, 3) and argv[1] == "window-minimize":
+        window_minimize(argv[2] if len(argv) == 3 else None)
+    elif len(argv) == 3 and argv[1] == "window-restore":
+        window_restore(argv[2])
     elif len(argv) == 2 and argv[1] == "toggles":
         toggles_info()
     elif len(argv) >= 3 and argv[1] == "hook":

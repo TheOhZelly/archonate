@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Next window layout: tiling, scrolling, floating (SUPER + Backspace)
+python3 "$ARCHONATE_PY" layout next

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Bring a minimized window back to the workspace you're on
+# archonate:args=<address>
+python3 "$ARCHONATE_PY" window-restore "${1:?usage: archonate window restore <address>}"

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=The window layout in use
+python3 "$ARCHONATE_PY" layout current

@@ -102,6 +102,7 @@ Scope {
                 ...(d.rices.length > 1 ? [{ label: "Rice", icon: "palette", hint: d.rice, sub: "rices" }] : []),
                 ...((d.styled ?? []).includes(d.rice) && d.styles.length ? [{ label: "Style", icon: "palette", hint: (d.styles.find(s => s.name === d.style)?.title ?? ""), sub: "styles" }] : []),
                 { label: "Mode", icon: "tune", hint: d.mode, sub: "modes" },
+                { label: "Layout", icon: "dashboard", hint: d.layout ?? "tiling", sub: "layouts" },
                 { label: "Wallpaper", icon: "wallpaper", sub: "wallpaper" },
                 { label: "Switches", icon: "toggle_on", sub: "toggles" },
                 { label: "Quick panels", icon: "dashboard", sub: "panels" },
@@ -143,6 +144,9 @@ Scope {
             return d.styles.filter(s => s.mine).map(s => (d.rice === d.styleRice && s.name === d.style
                 ? { label: s.title, color: "#" + s.accent, hint: "wearing it", current: true }
                 : { label: s.title, color: "#" + s.accent, icon: "delete", hint: "to the trash", run: ["style", "remove", s.name] }));
+        case "layouts":
+            return [["tiling", "Tiling", "dashboard"], ["scrolling", "Scrolling", "view_column"], ["floating", "Floating, with a dock", "filter_none"]]
+                .map(l => ({ label: l[1], icon: l[2], current: l[0] === (d.layout ?? "tiling"), run: ["layout", "set", l[0]] }));
         case "modes":
             return d.modes.map(m => ({ label: m, icon: m === "gaming" ? "sports_esports" : m === "minimal" ? "crop_free" : "tune", current: m === d.mode, run: ["mode", "set", m] }));
         case "wallpaper":

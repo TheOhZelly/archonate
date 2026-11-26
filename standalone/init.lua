@@ -70,6 +70,7 @@ function M.load(rice)
     require("hyprland.input")
     require("hyprland.gestures")
     require("hyprland.rules")
+    require("hyprland.layouts") -- tiling / scrolling / floating (SUPER + Backspace)
     require("hyprland.keybinds")
 
     -- Login-only daemons. The rice's own shell is started here too; hypr-rice

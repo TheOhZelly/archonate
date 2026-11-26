@@ -70,6 +70,15 @@ for s in json.load(sys.stdin)["styles"]:
     [ -n "$c" ] && "$A" style remove "${c##*$'\t'}" && notify-send "Archonate" "Style moved to the trash"
 }
 
+menu_layout() {
+    local cur c
+    cur=$("$A" layout current)
+    c=$(pick "layout" "$( [ "$cur" = tiling ] && echo "󰕰   tiling   ●" || echo "󰕰   tiling")" \
+        "$( [ "$cur" = scrolling ] && echo "󰕴   scrolling   ●" || echo "󰕴   scrolling")" \
+        "$( [ "$cur" = floating ] && echo "󰖲   floating   ●" || echo "󰖲   floating")") || return
+    [ -n "$c" ] && "$A" layout set "$(strip "$c")"
+}
+
 menu_mode() {
     local cur c
     cur=$(current_mode)
@@ -173,6 +182,7 @@ menu_main() {
     c=$(pick "archonate" \
         "$first" \
         "󰘮   Mode   ($(current_mode))" \
+        "󰕰   Layout   ($("$A" layout current))" \
         "󰋩   Wallpaper" \
         "󰔡   Switches" \
         "󰕮   Quick panels" \
@@ -188,6 +198,7 @@ menu_main() {
     case "$c" in
         *Rice*|*Style*) menu_rice ;;
         *Mode*) menu_mode ;;
+        *Layout*) menu_layout ;;
         *Security*) "$A" security ;;
         *Wallpaper*) menu_wallpaper ;;
         *Switches*) menu_toggles ;;
@@ -211,6 +222,7 @@ case "${1:-}" in
     rice | theme) menu_rice ;;
     style | styles) menu_style ;;
     mode) menu_mode ;;
+    layout | layouts) menu_layout ;;
     wallpaper) menu_wallpaper ;;
     toggles | switches) menu_toggles ;;
     capture) menu_capture ;;
