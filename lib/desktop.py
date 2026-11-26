@@ -261,9 +261,10 @@ def colour_map(desk):
 
 def apply_apps(desk, rice=None):
     """btop, Qt (qtengine), nvtop, htop, Zed (theme "Archonate"), cava and
-    Discord themes for this rice, from lib/templates. A rice can bring its own
-    whole Discord theme (rices/<rice>/discord.theme.scss, replacing the shared
-    Midnight one) or additions to it (rices/<rice>/discord.scss)."""
+    Discord themes for this rice, from lib/templates. Discord's theme takes the
+    rice's colours and its look (font, corners, borders, casing, like the
+    Claude app); a rice can bring its own whole one (rices/<rice>/discord.theme.scss)
+    or additions to the shared one (rices/<rice>/discord.scss)."""
     c = colour_map(desk)
     cfg = HOME / ".config"
 
@@ -303,6 +304,12 @@ def apply_apps(desk, rice=None):
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         (Path(tmp) / "_colours.scss").write_text(gen_scss(c))
+        look = rice_look(rice or active_rice())
+        lc = look.get("border") or (mix(look["palette"].get("surface_hi", "474f50"), look["palette"].get("text", "ffffff"), 0.2) + "ff")
+        (Path(tmp) / "_look.scss").write_text(
+            f'$font: "{look.get("font") or "sans-serif"}";\n$radius: {look.get("radius", 12)};\n'
+            f'$bw: {look.get("borderWidth", 1)};\n$border: #{lc};\n$caps: "{look.get("caps", "none")}";\n'
+            f'$tracking: {look.get("tracking", 0.0)};\n')
         rdir = HYPR / "rices" / (rice or active_rice() or "")
         own, extra = rdir / "discord.theme.scss", rdir / "discord.scss"
         # a rice's own whole theme replaces the shared one (falling back to it on a compile error)
@@ -313,8 +320,10 @@ def apply_apps(desk, rice=None):
             if r.returncode:
                 print(f"archonate: discord ({rdir.name}): {r.stderr.strip()}", file=sys.stderr)
         if not css:
-            css = subprocess.run(["sass", "-I", tmp, str(TEMPLATES / "discord.scss")],
-                                 capture_output=True, text=True).stdout
+            r = subprocess.run(["sass", "-I", tmp, str(TEMPLATES / "discord.scss")], capture_output=True, text=True)
+            css = r.stdout if r.returncode == 0 else ""
+            if r.returncode:
+                print(f"archonate: discord: {r.stderr.strip()}", file=sys.stderr)
             # or just a few additions on top of it
             if css and extra.is_file():
                 more = subprocess.run(["sass", "-I", tmp, str(extra)], capture_output=True, text=True)

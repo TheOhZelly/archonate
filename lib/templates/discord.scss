@@ -1,176 +1,364 @@
 /**
- * @name Midnight (Archonate)
- * @description A dark, rounded discord theme. Archonate rice colours.
- * @author refact0r, esme, anubis
- * @version 1.6.2
- * @invite nz87hXyvcy
- * @website https://github.com/refact0r/midnight-discord
- * @authorId 508863359777505290
- * @authorLink https://www.refact0r.dev
+ * @name Archonate
+ * @description Discord wearing the rice: its colours, font, corners and borders, one calm frame with hairline dividers. Written by archonate on every rice or style switch.
+ * @author Archonate
+ * @version 2.0.0
 */
 
+/* The same treatment as the Claude app (lib/desktop.py claude_css): Discord's
+   own layout, drawn as one frame split by the rice's borders, in the rice's
+   font and corners, the accent kept for what's live (focus, selection,
+   unread). Colours come from _colours.scss, the rice's shape from _look.scss.
+   A rice can add to this (rices/<rice>/discord.scss) or replace it
+   (rices/<rice>/discord.theme.scss).
+
+   How it holds together across Discord updates:
+   - colour is set through Discord's own design tokens (--background-*,
+     --text-*, --interactive-*, ...), which are stable;
+   - layout touches a handful of containers, matched by the stable start of
+     their hashed class names ([class^="guilds_"]), never the hash. */
+
 @use "sass:color";
+@use "sass:math";
 @use "colours" as c;
+@use "look" as l;
 
-@import url("https://refact0r.github.io/midnight-discord/build/midnight.css");
-
-body {
-    /* font options */
-    --font: "figtree"; /* change to '' for default discord font */
-    --code-font: "JetBrainsMono NF"; /* change to '' for default discord font */
-    font-weight: 400; /* normal text font weight. DOES NOT AFFECT BOLD TEXT */
-
-    /* sizes */
-    --gap: 12px; /* spacing between panels */
-    --divider-thickness: 4px; /* thickness of unread messages divider and highlighted message borders */
-    --border-thickness: 1px; /* thickness of borders around main panels. DOES NOT AFFECT OTHER BORDERS */
-
-    /* animation/transition options */
-    --animations: on; /* turn off to disable all midnight animations/transitions */
-    --list-item-transition: 0.2s ease; /* transition for list items */
-    --dms-icon-svg-transition: 0.4s ease; /* transition for the dms icon */
-    --border-hover-transition: 0.2s ease; /* transition for borders when hovered */
-
-    /* top bar options */
-    --top-bar-height: var(
-        --gap
-    ); /* height of the titlebar/top bar (discord default is 36px, 24px recommended if moving/hiding top bar buttons) */
-    --top-bar-button-position: titlebar; /* off: default position, hide: hide inbox/support buttons completely, serverlist: move inbox button to server list, titlebar: move inbox button to titlebar (will hide title) */
-    --top-bar-title-position: off; /* off: default centered position, hide: hide title completely, left: left align title (like old discord) */
-    --subtle-top-bar-title: off; /* off: default, on: hide the icon and use subtle text color (like old discord) */
-
-    /* window controls */
-    --custom-window-controls: on; /* turn off to use discord default window controls */
-    --window-control-size: 14px; /* size of custom window controls */
-
-    /* dms button icon options */
-    --custom-dms-icon: custom; /* off: use default discord icon, hide: remove icon entirely, custom: use custom icon */
-    --dms-icon-svg-url: url("https://refact0r.github.io/midnight-discord/assets/Font_Awesome_5_solid_moon.svg"); /* icon svg url. MUST BE A SVG. */
-    --dms-icon-svg-size: 90%; /* size of the svg (css mask-size) */
-    --dms-icon-color-before: var(--icon-subtle); /* normal icon color */
-    --dms-icon-color-after: var(--white); /* icon color when button is hovered/selected */
-
-    /* dms button background options */
-    --custom-dms-background: off; /* off to disable, image to use a background image (must set url variable below), color to use a custom color/gradient */
-    --dms-background-image-url: url(""); /* url of the background image */
-    --dms-background-image-size: cover; /* size of the background image (css background-size) */
-    --dms-background-color: linear-gradient(
-        70deg,
-        var(--blue-2),
-        var(--purple-2),
-        var(--red-2)
-    ); /* fixed color/gradient (css background) */
-
-    /* background image options */
-    --background-image: off; /* turn on to use a background image */
-    --background-image-url: url(""); /* url of the background image */
-
-    /* transparency/blur options */
-    /* NOTE: TO USE TRANSPARENCY/BLUR, YOU MUST HAVE TRANSPARENT BG COLORS. FOR EXAMPLE: --bg-4: hsla(220, 15%, 10%, 0.7); */
-    --transparency-tweaks: off; /* turn on to remove some elements for better transparency */
-    --remove-bg-layer: off; /* turn on to remove the base --bg-3 layer for use with window transparency (WILL OVERRIDE BACKGROUND IMAGE) */
-    --panel-blur: off; /* turn on to blur the background of panels */
-    --blur-amount: 12px; /* amount of blur */
-    --bg-floating: #{c.$surface}; /* you can set this to a more opaque color if floating panels look too transparent */
-
-    /* chatbar options */
-    --custom-chatbar: off; /* off: default chatbar, separated: chatbar separated from chat */
-    --chatbar-height: 47px; /* height of the chatbar (56px by default, 47px to align with user panel, 56px recommended for separated) */
-
-    /* other options */
-    --small-user-panel: off; /* off: default user panel, on: smaller user panel like in old discord */
+@function cls($name) {
+    @return '[class^="#{$name}_"], [class*=" #{$name}_"]';
+}
+@function r($k) {
+    @return math.round(l.$radius * $k) * 1px;
 }
 
-/* color options */
-:root {
-    --colors: on; /* turn off to use discord default colors */
+// ---- palette -------------------------------------------------------------------
+$side: c.$surfaceContainerLowest; // servers, channels, members
+$main: color.mix(c.$surface, c.$surfaceContainerLowest, 60%); // the chat
+$raised: c.$surfaceContainer; // inputs, popouts, embeds
+$high: c.$surfaceContainerHigh;
+$text: c.$onSurface;
+$dim: c.$onSurfaceVariant;
+$faint: c.$outline;
+$accent: c.$primary;
+$line: l.$border; // the rice's border colour
+$hair: color.change(c.$onSurface, $alpha: 0.07);
+$bw: l.$bw * 1px;
+$font: l.$font, sans-serif;
+$mono: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
 
-    /* text colors */
-    --text-0: #{c.$onPrimary}; /* text on colored elements */
-    --text-1: #{color.scale(c.$onSurface, $lightness: 10%)}; /* bright text on colored elements */
-    --text-2: #{color.scale(c.$onSurface, $lightness: 5%)}; /* headings and important text */
-    --text-3: #{c.$onSurface}; /* normal text */
-    --text-4: #{c.$outline}; /* icon buttons and channels */
-    --text-5: #{c.$outline}; /* muted channels/chats and timestamps */
+// ---- tokens --------------------------------------------------------------------
+:root,
+.theme-dark,
+.theme-darker,
+.theme-midnight,
+.visual-refresh {
+    /* type */
+    --font-primary: #{$font};
+    --font-display: #{$font};
+    --font-headline: #{$font};
+    --font-code: #{$mono};
 
-    /* background and dark colors */
-    --bg-1: #{c.$surfaceContainerHighest}; /* dark buttons when clicked */
-    --bg-2: #{c.$surfaceContainerHigh}; /* dark buttons */
-    --bg-3: #{c.$surface}; /* spacing, secondary elements */
-    --bg-4: #{c.$surfaceContainer}; /* main background color */
-    --hover: #{color.change(c.$onSurface, $alpha: 0.08)}; /* channels and buttons when hovered */
-    --active: #{color.change(c.$onSurface, $alpha: 0.1)}; /* channels and buttons when clicked or selected */
-    --active-2: #{color.change(c.$onSurface, $alpha: 0.2)}; /* extra state for transparent buttons */
-    --message-hover: #{color.change(c.$onSurface, $alpha: 0.08)}; /* messages when hovered */
+    /* corners on the rice's scale */
+    --radius-xs: #{r(0.3)};
+    --radius-sm: #{r(0.4)};
+    --radius-md: #{r(0.6)};
+    --radius-lg: #{r(0.8)};
+    --radius-xl: #{r(1)};
 
-    /* accent colors */
-    --accent-1: var(--blue-1); /* links and other accent text */
-    --accent-2: var(--blue-2); /* small accent elements */
-    --accent-3: var(--blue-3); /* accent buttons */
-    --accent-4: var(--blue-4); /* accent buttons when hovered */
-    --accent-5: var(--blue-5); /* accent buttons when clicked */
-    --accent-new: #{c.$error}; /* stuff that's normally red like mute/deafen buttons */
-    --mention: linear-gradient(
-        to right,
-        color-mix(in hsl, var(--blue-2), transparent 90%) 40%,
-        transparent
-    ); /* background of messages that mention you */
-    --mention-hover: linear-gradient(
-        to right,
-        color-mix(in hsl, var(--blue-2), transparent 95%) 40%,
-        transparent
-    ); /* background of messages that mention you when hovered */
-    --reply: linear-gradient(
-        to right,
-        color-mix(in hsl, var(--text-3), transparent 90%) 40%,
-        transparent
-    ); /* background of messages that reply to you */
-    --reply-hover: linear-gradient(
-        to right,
-        color-mix(in hsl, var(--text-3), transparent 95%) 40%,
-        transparent
-    ); /* background of messages that reply to you when hovered */
+    /* surfaces: one frame, chat a step up */
+    --app-frame-background: #{$side};
+    --app-frame-border: #{$line};
+    --background-base-lowest: #{$side};
+    --background-base-lower: #{$side};
+    --background-base-low: #{$side};
+    --background-primary: #{$main};
+    --background-secondary: #{$side};
+    --background-secondary-alt: #{$side};
+    --background-tertiary: #{$side};
+    --background-surface-high: #{$raised};
+    --background-surface-higher: #{$raised};
+    --background-surface-highest: #{$high};
+    --bg-surface-raised: #{$raised};
+    --bg-surface-overlay-tmp: #{$raised};
+    --background-floating: #{$raised};
+    --modal-background: #{$main};
+    --modal-footer-background: #{$side};
+    --home-background: #{$main};
+    --chat-background: #{$main};
+    --chat-background-default: #{$main};
+    --channeltextarea-background: #{$raised};
+    --input-background-default: #{$raised};
+    --card-background-default: #{$raised};
+    --card-secondary-bg: #{$raised};
+    --embed-background: #{$raised};
+    --embed-background-alternate: #{$high};
+    --background-code: #{$side};
+    --background-mod-subtle: #{color.change($text, $alpha: 0.05)};
+    --background-mod-normal: #{color.change($text, $alpha: 0.08)};
+    --background-mod-strong: #{color.change($text, $alpha: 0.12)};
+    --background-mod-muted: #{color.change($text, $alpha: 0.04)};
+    --background-scrim: #{color.change($side, $alpha: 0.8)};
 
-    /* status indicator colors */
-    --online: var(--green-2); /* change to #43a25a for default */
-    --dnd: var(--red-2); /* change to #d83a42 for default */
-    --idle: var(--yellow-2); /* change to #ca9654 for default */
-    --streaming: var(--purple-2); /* change to #593695 for default */
-    --offline: var(--text-4); /* change to #83838b for default offline color */
+    /* hover / selected: quiet tints, the accent only for what's selected */
+    --interactive-background-hover: #{color.change($text, $alpha: 0.06)};
+    --interactive-background-active: #{color.change($accent, $alpha: 0.14)};
+    --interactive-background-selected: #{color.change($accent, $alpha: 0.12)};
+    --message-background-hover: #{color.change($text, $alpha: 0.03)};
+    --background-modifier-hover: #{color.change($text, $alpha: 0.06)};
+    --background-modifier-selected: #{color.change($accent, $alpha: 0.12)};
+    --background-modifier-active: #{color.change($accent, $alpha: 0.14)};
 
-    /* border colors */
-    --border-light: #{color.change(c.$outline, $alpha: 0)}; /* light border color */
-    --border: #{color.change(c.$outline, $alpha: 0.2)}; /* normal border color */
-    --button-border: #{color.change(c.$outline, $alpha: 0)}; /* neutral border color of buttons */
+    /* text */
+    --text-strong: #{$text};
+    --text-default: #{$text};
+    --text-normal: #{$text};
+    --text-subtle: #{$dim};
+    --text-muted: #{$faint};
+    --header-primary: #{$text};
+    --header-secondary: #{$dim};
+    --text-link: #{$accent};
+    --text-brand: #{$accent};
+    --text-invert: #{c.$onPrimary};
+    --channels-default: #{$dim};
+    --channel-icon: #{$faint};
+    --chat-text-muted: #{$faint};
+    --input-text-default: #{$text};
+    --input-placeholder-text-default: #{$faint};
+    --channel-text-area-placeholder: #{$faint};
 
-    /* base colors */
-    --red-1: #{c.$error};
-    --red-2: #{color.scale(c.$error, $lightness: -5%)};
-    --red-3: #{color.scale(c.$error, $lightness: -10%)};
-    --red-4: #{color.scale(c.$error, $lightness: -15%)};
-    --red-5: #{color.scale(c.$error, $lightness: -20%)};
+    /* icons and controls */
+    --interactive-text-default: #{$dim};
+    --interactive-text-hover: #{$text};
+    --interactive-text-active: #{$text};
+    --interactive-icon-default: #{$dim};
+    --interactive-icon-hover: #{$text};
+    --interactive-icon-active: #{$accent};
+    --interactive-normal: #{$dim};
+    --interactive-hover: #{$text};
+    --interactive-active: #{$text};
+    --interactive-muted: #{color.change($faint, $alpha: 0.6)};
+    --icon-default: #{$dim};
+    --icon-strong: #{$text};
+    --icon-subtle: #{$faint};
+    --icon-muted: #{$faint};
+    --icon-link: #{$accent};
 
-    --green-1: #{c.$green};
-    --green-2: #{color.scale(c.$green, $lightness: -5%)};
-    --green-3: #{color.scale(c.$green, $lightness: -10%)};
-    --green-4: #{color.scale(c.$green, $lightness: -15%)};
-    --green-5: #{color.scale(c.$green, $lightness: -20%)};
+    /* brand: the accent wherever Discord would be blurple */
+    --brand-500: #{$accent};
+    --brand-560: #{c.$primaryDim};
+    --brand-360: #{color.scale($accent, $lightness: 15%)};
+    --brand-260: #{color.scale($accent, $lightness: 30%)};
+    --background-brand: #{$accent};
+    --background-accent: #{$accent};
+    --control-brand-foreground: #{$accent};
+    --control-brand-foreground-new: #{$accent};
+    --control-primary-background-default: #{$accent};
+    --control-primary-background-hover: #{color.scale($accent, $lightness: 8%)};
+    --control-primary-background-active: #{c.$primaryDim};
+    --control-primary-text-default: #{c.$onPrimary};
+    --control-primary-text-hover: #{c.$onPrimary};
+    --control-primary-text-active: #{c.$onPrimary};
+    --control-primary-icon-default: #{c.$onPrimary};
+    --control-primary-border-default: transparent;
+    --control-secondary-background-default: #{$raised};
+    --control-secondary-background-hover: #{$high};
+    --control-secondary-background-active: #{$high};
+    --control-secondary-text-default: #{$text};
+    --control-secondary-border-default: #{$line};
+    --redesign-button-primary-background: #{$accent};
+    --redesign-button-primary-pressed-background: #{c.$primaryDim};
+    --redesign-button-primary-text: #{c.$onPrimary};
+    --redesign-button-secondary-background: #{$raised};
+    --redesign-button-secondary-pressed-background: #{$high};
+    --redesign-button-secondary-text: #{$text};
+    --redesign-button-secondary-border: #{$line};
+    --switch-background-selected-default: #{$accent};
+    --switch-background-selected-hover: #{$accent};
+    --checkbox-background-selected-default: #{$accent};
+    --radio-background-selected-default: #{$accent};
+    --slider-track-background: #{$high};
+    --progressbar-indicator-background: #{$accent};
 
-    --blue-1: #{c.$primary};
-    --blue-2: #{color.scale(c.$primary, $lightness: -5%)};
-    --blue-3: #{color.scale(c.$primary, $lightness: -10%)};
-    --blue-4: #{color.scale(c.$primary, $lightness: -15%)};
-    --blue-5: #{color.scale(c.$primary, $lightness: -20%)};
+    /* borders: the rice's own */
+    --border-subtle: #{$hair};
+    --border-normal: #{$line};
+    --border-strong: #{$line};
+    --border-faint: #{$hair};
+    --input-border-default: #{$line};
+    --input-border-hover: #{$line};
+    --input-border-active: #{$accent};
+    --chat-border: #{$line};
 
-    --yellow-1: #{c.$yellow};
-    --yellow-2: #{color.scale(c.$yellow, $lightness: -5%)};
-    --yellow-3: #{color.scale(c.$yellow, $lightness: -10%)};
-    --yellow-4: #{color.scale(c.$yellow, $lightness: -15%)};
-    --yellow-5: #{color.scale(c.$yellow, $lightness: -20%)};
+    /* messages */
+    --message-mentioned-background-default: #{color.change(c.$tertiary, $alpha: 0.1)};
+    --message-mentioned-background-hover: #{color.change(c.$tertiary, $alpha: 0.14)};
+    --message-highlight-background-default: #{color.change($accent, $alpha: 0.08)};
+    --message-highlight-background-hover: #{color.change($accent, $alpha: 0.12)};
+    --background-mentioned: #{color.change(c.$tertiary, $alpha: 0.1)};
+    --background-mentioned-hover: #{color.change(c.$tertiary, $alpha: 0.14)};
+    --info-warning-foreground: #{c.$tertiary};
+    --mention-foreground: #{c.$tertiary};
+    --reaction-background-default: #{$raised};
+    --reaction-background-reacted-default: #{color.change($accent, $alpha: 0.16)};
+    --reaction-border-reacted-default: #{$accent};
+    --reaction-text-reacted-default: #{$text};
+    --spine-default: #{$line};
+    --thread-channel-spine: #{$line};
 
-    --purple-1: #{c.$mauve};
-    --purple-2: #{color.scale(c.$mauve, $lightness: -5%)};
-    --purple-3: #{color.scale(c.$mauve, $lightness: -10%)};
-    --purple-4: #{color.scale(c.$mauve, $lightness: -15%)};
-    --purple-5: #{color.scale(c.$mauve, $lightness: -20%)};
+    /* status */
+    --status-online: #{c.$green};
+    --status-positive: #{c.$green};
+    --status-idle: #{c.$yellow};
+    --status-warning: #{c.$yellow};
+    --status-dnd: #{c.$error};
+    --status-danger: #{c.$error};
+    --text-feedback-critical: #{c.$error};
+    --text-feedback-positive: #{c.$green};
+    --text-feedback-warning: #{c.$yellow};
+    --badge-notification-background: #{c.$secondary};
+    --badge-background-default: #{c.$secondary};
+
+    /* code */
+    --text-code: #{$text};
+    --text-code-keyword: #{c.$mauve};
+    --text-code-string: #{c.$green};
+    --text-code-comment: #{$faint};
+    --text-code-title: #{$accent};
+    --text-code-variable: #{c.$blue};
+    --text-code-builtin: #{c.$peach};
+
+    /* scrollbars: thin, out of the way */
+    --scrollbar-thin-thumb: #{color.change($text, $alpha: 0.14)};
+    --scrollbar-thin-track: transparent;
+    --scrollbar-auto-thumb: #{color.change($text, $alpha: 0.14)};
+    --scrollbar-auto-track: transparent;
+}
+
+// ---- type ----------------------------------------------------------------------
+body,
+input,
+textarea,
+button,
+select {
+    font-family: $font !important;
+}
+code,
+pre,
+kbd,
+samp,
+[class*="codeBlock"],
+[class*="markup_"] code {
+    font-family: $mono !important;
+}
+
+// ---- layout: one frame, split by the rice's border --------------------------------
+:is(#{cls("base")}),
+:is(#{cls("sidebar")}),
+:is(#{cls("guilds")}),
+:is(#{cls("sidebarList")}),
+:is(#{cls("membersWrap")}),
+:is(#{cls("members")}) {
+    background: $side !important;
+}
+:is(#{cls("page")}),
+:is(#{cls("chat")}),
+:is(#{cls("chatContent")}) {
+    background: $main !important;
+}
+
+// the dividers: servers | channels | chat | members
+:is(#{cls("guilds")}) {
+    border-right: $bw solid $line !important;
+}
+:is(#{cls("sidebar")}) {
+    border-right: $bw solid $line !important;
+    border-top: none !important;
+    border-radius: 0 !important;
+}
+:is(#{cls("membersWrap")}) {
+    border-left: $bw solid $line !important;
+}
+:is(#{cls("panels")}) {
+    background: $side !important;
+    border-top: $bw solid $line !important;
+    border-radius: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+}
+:is(#{cls("sidebarList")}) {
+    border-radius: 0 !important;
+    border: none !important;
+}
+:is(#{cls("page")}),
+:is(#{cls("chat")}) {
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+// ---- the chat bar: framed like the Claude composer, the accent glows on focus -------
+:is(#{cls("channelTextArea")}) {
+    background: $raised !important;
+    border: $bw solid $line !important;
+    border-radius: r(1.2) !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+:is(#{cls("channelTextArea")}):focus-within {
+    border-color: $accent !important;
+    box-shadow: 0 0 0 math.max(1px, $bw) color.change($accent, $alpha: 0.25), 0 0 18px color.change($accent, $alpha: 0.15) !important;
+}
+
+// ---- framed things: popouts, menus, modals, embeds wear the rice's border -----------
+[role="menu"],
+[role="dialog"],
+[role="listbox"],
+:is(#{cls("embedFull")}),
+:is(#{cls("userPopoutOuter")}),
+:is(#{cls("popoutContainer")}) {
+    border: $bw solid $line !important;
+    box-shadow: none !important;
+}
+[role="menu"],
+[role="dialog"],
+[role="listbox"] {
+    border-radius: r(1) !important;
+}
+
+// ---- details -------------------------------------------------------------------------
+// the selected channel: a tint and an accent tick
+:is(#{cls("link")})[aria-current="page"],
+:is(#{cls("selected")}) > :is(#{cls("link")}) {
+    box-shadow: inset 2px 0 0 $accent;
+}
+// unread pill on the server list in the accent
+:is(#{cls("pill")}) :is(#{cls("item")}) {
+    background: $accent !important;
+}
+// quieter dividers inside the panels
+:is(#{cls("divider")}) {
+    border-color: $hair !important;
+}
+// the server icons: the rice's corners instead of Discord's blobs
+:is(#{cls("guilds")}) :is(#{cls("wrapper")}) :is(#{cls("svg")}) foreignObject {
+    mask: none !important;
+    border-radius: r(1.2);
+    overflow: hidden;
+}
+
+::selection {
+    background: color.change($accent, $alpha: 0.33);
+}
+
+// ---- labels: the rice's casing and tracking on headers, never on messages or names ---
+$transform: if(l.$caps == "upper", uppercase, if(l.$caps == "lower", lowercase, none));
+@if $transform != none or l.$tracking > 0 {
+    :is(#{cls("containerDefault")}) h3,
+    :is(#{cls("membersGroup")}),
+    :is(#{cls("title")}) h1,
+    :is(#{cls("sectionTitle")}) {
+        @if $transform != none {
+            text-transform: $transform !important;
+        }
+        letter-spacing: math.div(math.min(math.max(l.$tracking, if($transform == uppercase, 0.6, 0)), 1.6), 13) * 1em !important;
+    }
 }
