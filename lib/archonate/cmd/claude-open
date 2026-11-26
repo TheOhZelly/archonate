@@ -1,13 +1,4 @@
 #!/usr/bin/env bash
 . "$ARCHONATE_DIR/common.sh"
-# archonate:summary=Focus the Claude app, or open it (SUPER+C)
-addr=$(hyprctl clients -j | python3 -c '
-import json, sys
-for c in json.load(sys.stdin):
-    if c["class"] == "com.anthropic.Claude" and c["mapped"]:
-        print(c["address"]); break')
-if [ -n "$addr" ]; then
-    hyprctl dispatch "hl.dsp.focus({ window = \"address:$addr\" })" >/dev/null
-else
-    setsid -f claude-desktop >/dev/null 2>&1
-fi
+# archonate:summary=Show or hide the Claude scratchpad, opening Claude if needed (SUPER+C)
+hyprctl eval 'require("utils.functions").toggle("claude")()' >/dev/null

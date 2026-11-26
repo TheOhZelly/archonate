@@ -34,6 +34,7 @@ local music_player_tag = "music_player"
 local communication_app_tag = "communication_app"
 local todo_app_tag = "todo_app"
 local obs_tag = "obs_studio"
+local claude_tag = "claude_app"
 
 
 ----------------------
@@ -151,6 +152,7 @@ tagged_rule(todo_app_tag, {
     "todoist" -- Todoist
 }, "class")
 tagged_rule(obs_tag, { "com.obsproject.Studio" }, "class") -- OBS: its own scratchpad, SUPER + R
+tagged_rule(claude_tag, { "com.anthropic.Claude" }, "class") -- Claude: its own scratchpad, SUPER + C
 
 
 -----------------------
@@ -197,6 +199,7 @@ create_tag(music_player_tag, { workspace = "special:music" })
 create_tag(communication_app_tag, { workspace = "special:communication" })
 create_tag(todo_app_tag, { workspace = "special:todo" })
 create_tag(obs_tag, { workspace = "special:obs" })
+create_tag(claude_tag, { workspace = "special:claude" })
 
 
 -------------------------

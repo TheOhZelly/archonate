@@ -116,6 +116,9 @@ local function default_config()
                 command = { "foot", "-a", "btop", "-T", "btop", "fish", "-C", "exec btop" },
             },
         },
+        claude = {
+            claude = { enable = true, match = { { class = "com.anthropic.Claude" } }, command = { "claude-desktop" }, move = true },
+        },
         obs = {
             obs = { enable = true, match = { { class = "com.obsproject.Studio" } }, command = { "obs" }, move = true },
         },

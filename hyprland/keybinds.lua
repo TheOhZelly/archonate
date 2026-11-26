@@ -165,7 +165,7 @@ create_bind(vars.kbBrowser, app(vars.browser, "browser"))
 create_bind(vars.kbEditor, app(vars.editor, "editor"))
 create_bind(vars.kbFileExplorer, app(vars.fileExplorer, "files"))
 create_bind(vars.kbAudioSettings, app(vars.audioSettings, "audio"))
-create_bind(vars.kbClaudeApp, arch("claude-open"))
+create_bind(vars.kbClaudeApp, fn.toggle("claude")) -- Claude scratchpad: opens it if needed, shows/hides it
 create_bind(vars.kbObsStudio, fn.toggle("obs")) -- OBS scratchpad: opens it if needed, shows/hides it
 -- Your coding agent (archonate agent default), and "what does this error mean?"
 -- for whatever you just copied
