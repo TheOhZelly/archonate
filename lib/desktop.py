@@ -259,6 +259,29 @@ def colour_map(desk):
     return c
 
 
+def logo_a_svg(fill="000000", fill2=None):
+    """The A of the ARCHONATE logo (the first 13 columns of lib/archonate/logo.txt,
+    as fastfetch and the bar show it) as an SVG of exact rectangles, 12x16 units.
+    Pixel art: show it only at whole-pixel scales (12x16, 24x32) or it blurs.
+    Two-tone like fastfetch's: the top five rows `fill`, the rest `fill2`."""
+    # one column out of the hole (column 6): a terminal's cells are 1.1x taller than
+    # wide, so fastfetch's A is narrower than 13 square blocks; 12 matches it
+    rows = [r[:6] + r[7:13] for r in (HYPR / "lib/archonate/logo.txt").read_text().splitlines()[:8]]
+    rects, rects2 = [], []
+    for y, row in enumerate(rows):
+        out = rects if y < 5 or not fill2 else rects2
+        for x, ch in enumerate(row):
+            if ch == "\u2588":
+                out.append(f'<rect x="{x}" y="{y * 2}" width="1" height="2"/>')
+            elif ch == "\u2580":
+                out.append(f'<rect x="{x}" y="{y * 2}" width="1" height="1"/>')
+            elif ch == "\u2584":
+                out.append(f'<rect x="{x}" y="{y * 2 + 1}" width="1" height="1"/>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 16" width="24" height="32" '
+            f'shape-rendering="crispEdges"><g fill="#{fill}">' + "".join(rects) + "</g>"
+            + (f'<g fill="#{fill2}">' + "".join(rects2) + "</g>" if rects2 else "") + "</svg>")
+
+
 def apply_apps(desk, rice=None):
     """btop, Qt (qtengine), nvtop, htop, Zed (theme "Archonate"), cava and
     Discord themes for this rice, from lib/templates. Discord's theme takes the
@@ -309,7 +332,10 @@ def apply_apps(desk, rice=None):
         (Path(tmp) / "_look.scss").write_text(
             f'$font: "{look.get("font") or "sans-serif"}";\n$radius: {look.get("radius", 12)};\n'
             f'$bw: {look.get("borderWidth", 1)};\n$border: #{lc};\n$caps: "{look.get("caps", "none")}";\n'
-            f'$tracking: {look.get("tracking", 0.0)};\n')
+            f'$tracking: {look.get("tracking", 0.0)};\n'
+            + "".join(f'${k}: #{desk["palette"][k]};\n' for k in ("bg", "text", "accent"))
+            + '$logo-a: "data:image/svg+xml;base64,'
+            + __import__("base64").b64encode(logo_a_svg(desk["palette"]["accent"], desk["palette"].get("secondary")).encode()).decode() + '";\n')
         rdir = HYPR / "rices" / (rice or active_rice() or "")
         own, extra = rdir / "discord.theme.scss", rdir / "discord.scss"
         # a rice's own whole theme replaces the shared one (falling back to it on a compile error)

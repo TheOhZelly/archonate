@@ -2,7 +2,7 @@
  * @name Archonate
  * @description Discord wearing the rice: its colours, font, corners and borders, one calm frame with hairline dividers. Written by archonate on every rice or style switch.
  * @author Archonate
- * @version 2.0.0
+ * @version 2.1.0
 */
 
 /* The same treatment as the Claude app (lib/desktop.py claude_css): Discord's
@@ -30,17 +30,23 @@
     @return math.round(l.$radius * $k) * 1px;
 }
 
-// ---- palette -------------------------------------------------------------------
-$side: c.$surfaceContainerLowest; // servers, channels, members
-$main: color.mix(c.$surface, c.$surfaceContainerLowest, 60%); // the chat
-$raised: c.$surfaceContainer; // inputs, popouts, embeds
-$high: c.$surfaceContainerHigh;
-$text: c.$onSurface;
-$dim: c.$onSurfaceVariant;
-$faint: c.$outline;
-$accent: c.$primary;
-$line: l.$border; // the rice's border colour
-$hair: color.change(c.$onSurface, $alpha: 0.07);
+// ---- palette: the Claude app's ---------------------------------------------------
+// One background everywhere, faint text-coloured lines between panels, neutral
+// fills for hover and selection, the text colour for primary buttons; the accent
+// only for links, unread, mentions and focus.
+$bg: l.$bg;
+$side: $bg; // servers, channels, members
+$main: $bg; // the chat
+$text: l.$text;
+$raised: color.mix($text, $bg, 6%); // popouts, embeds
+$high: color.mix($text, $bg, 10%);
+$dim: color.mix($text, $bg, 82%);
+$faint: color.mix($text, $bg, 55%);
+$accent: l.$accent;
+$line: color.change($text, $alpha: 0.13); // dividers and frames
+$hair: color.change($text, $alpha: 0.07);
+$hov: color.change($text, $alpha: 0.05);
+$sel: color.change($text, $alpha: 0.09);
 $bw: l.$bw * 1px;
 $font: l.$font, sans-serif;
 $mono: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
@@ -85,8 +91,8 @@ $mono: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
     --home-background: #{$main};
     --chat-background: #{$main};
     --chat-background-default: #{$main};
-    --channeltextarea-background: #{$raised};
-    --input-background-default: #{$raised};
+    --channeltextarea-background: #{$bg};
+    --input-background-default: #{$bg};
     --card-background-default: #{$raised};
     --card-secondary-bg: #{$raised};
     --embed-background: #{$raised};
@@ -98,14 +104,14 @@ $mono: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
     --background-mod-muted: #{color.change($text, $alpha: 0.04)};
     --background-scrim: #{color.change($side, $alpha: 0.8)};
 
-    /* hover / selected: quiet tints, the accent only for what's selected */
-    --interactive-background-hover: #{color.change($text, $alpha: 0.06)};
-    --interactive-background-active: #{color.change($accent, $alpha: 0.14)};
-    --interactive-background-selected: #{color.change($accent, $alpha: 0.12)};
+    /* hover / selected: neutral fills, like the Claude sidebar */
+    --interactive-background-hover: #{$hov};
+    --interactive-background-active: #{$sel};
+    --interactive-background-selected: #{$sel};
     --message-background-hover: #{color.change($text, $alpha: 0.03)};
-    --background-modifier-hover: #{color.change($text, $alpha: 0.06)};
-    --background-modifier-selected: #{color.change($accent, $alpha: 0.12)};
-    --background-modifier-active: #{color.change($accent, $alpha: 0.14)};
+    --background-modifier-hover: #{$hov};
+    --background-modifier-selected: #{$sel};
+    --background-modifier-active: #{$sel};
 
     /* text */
     --text-strong: #{$text};
@@ -151,24 +157,25 @@ $mono: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
     --background-accent: #{$accent};
     --control-brand-foreground: #{$accent};
     --control-brand-foreground-new: #{$accent};
-    --control-primary-background-default: #{$accent};
-    --control-primary-background-hover: #{color.scale($accent, $lightness: 8%)};
-    --control-primary-background-active: #{c.$primaryDim};
-    --control-primary-text-default: #{c.$onPrimary};
-    --control-primary-text-hover: #{c.$onPrimary};
-    --control-primary-text-active: #{c.$onPrimary};
-    --control-primary-icon-default: #{c.$onPrimary};
+    /* primary buttons: the text colour, like Claude's */
+    --control-primary-background-default: #{$text};
+    --control-primary-background-hover: #{color.mix($text, $bg, 88%)};
+    --control-primary-background-active: #{color.mix($text, $bg, 78%)};
+    --control-primary-text-default: #{$bg};
+    --control-primary-text-hover: #{$bg};
+    --control-primary-text-active: #{$bg};
+    --control-primary-icon-default: #{$bg};
     --control-primary-border-default: transparent;
-    --control-secondary-background-default: #{$raised};
-    --control-secondary-background-hover: #{$high};
+    --control-secondary-background-default: transparent;
+    --control-secondary-background-hover: #{$hov};
     --control-secondary-background-active: #{$high};
     --control-secondary-text-default: #{$text};
     --control-secondary-border-default: #{$line};
-    --redesign-button-primary-background: #{$accent};
-    --redesign-button-primary-pressed-background: #{c.$primaryDim};
-    --redesign-button-primary-text: #{c.$onPrimary};
-    --redesign-button-secondary-background: #{$raised};
-    --redesign-button-secondary-pressed-background: #{$high};
+    --redesign-button-primary-background: #{$text};
+    --redesign-button-primary-pressed-background: #{color.mix($text, $bg, 78%)};
+    --redesign-button-primary-text: #{$bg};
+    --redesign-button-secondary-background: transparent;
+    --redesign-button-secondary-pressed-background: #{$sel};
     --redesign-button-secondary-text: #{$text};
     --redesign-button-secondary-border: #{$line};
     --switch-background-selected-default: #{$accent};
@@ -184,7 +191,7 @@ $mono: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
     --border-strong: #{$line};
     --border-faint: #{$hair};
     --input-border-default: #{$line};
-    --input-border-hover: #{$line};
+    --input-border-hover: #{color.change($text, $alpha: 0.22)};
     --input-border-active: #{$accent};
     --chat-border: #{$line};
 
@@ -297,7 +304,7 @@ samp,
 
 // ---- the chat bar: framed like the Claude composer, the accent glows on focus -------
 :is(#{cls("channelTextArea")}) {
-    background: $raised !important;
+    background: $bg !important;
     border: $bw solid $line !important;
     border-radius: r(1.2) !important;
     box-shadow: none !important;
@@ -325,10 +332,14 @@ samp,
 }
 
 // ---- details -------------------------------------------------------------------------
-// the selected channel: a tint and an accent tick
+// what you're in (channel, DM, settings page): a soft neutral fill, rounded,
+// no bar, like the selected chat in the Claude sidebar
 :is(#{cls("link")})[aria-current="page"],
-:is(#{cls("selected")}) > :is(#{cls("link")}) {
-    box-shadow: inset 2px 0 0 $accent;
+:is(#{cls("selected")}) > :is(#{cls("link")}),
+[aria-selected="true"]:is(#{cls("interactive")}) {
+    background: $sel !important;
+    box-shadow: none !important;
+    border-radius: r(0.6) !important;
 }
 // unread pill on the server list in the accent
 :is(#{cls("pill")}) :is(#{cls("item")}) {
@@ -360,5 +371,28 @@ $transform: if(l.$caps == "upper", uppercase, if(l.$caps == "lower", lowercase, 
             text-transform: $transform !important;
         }
         letter-spacing: math.div(math.min(math.max(l.$tracking, if($transform == uppercase, 0.6, 0)), 1.6), 13) * 1em !important;
+    }
+}
+
+// ---- the home button: the Archonate A instead of Discord's logo ----------------------
+// The logo's A (lib/desktop.py logo_a_svg), two-tone like fastfetch's, painted as
+// the button's own background at exactly 24x32 so its blocks stay sharp. Nothing
+// is layered on top, so hover and selection can't shift it; Discord's own logo and
+// fills inside are hidden.
+[data-list-item-id="guildsnav___home"] {
+    background: transparent url(l.$logo-a) center / 24px 32px no-repeat !important;
+    image-rendering: pixelated;
+    transition: background-color 0.15s ease;
+
+    &:hover,
+    &[aria-selected="true"] {
+        background-color: $hov !important;
+    }
+    > * {
+        opacity: 0 !important;
+    }
+    &::before,
+    &::after {
+        display: none !important;
     }
 }

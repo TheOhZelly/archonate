@@ -166,11 +166,12 @@ PanelWindow {
             anchors.verticalCenterOffset: -1
             spacing: 12
 
-            // A: the menu
-            Label {
-                text: "󰫮"
+            // A: the menu. The logo's own A (as fastfetch shows it), in whole-pixel blocks
+            LogoA {
+                anchors.verticalCenter: parent.verticalCenter
                 color: bar.theme.accent
-                font.pixelSize: 26
+                color2: bar.theme.hot
+                cell: 1
 
                 MouseArea {
                     anchors.fill: parent
