@@ -443,7 +443,8 @@ def apply_obs(desk, rice):
     rice's palette, accent, font, border weight and corners, written to
     ~/.config/obs-studio/themes/Archonate.ovt. Pick it once in OBS (Settings >
     Appearance: theme Yami, style Archonate); later rice or style switches
-    rewrite it, and OBS shows them after a restart. Skipped without OBS."""
+    rewrite it, and OBS restyles live: Archonate turns on OBS's own
+    Appearance > AutoReload, which watches the theme files. Skipped without OBS."""
     cfg = HOME / ".config/obs-studio"
     if not cfg.is_dir():
         return
@@ -507,6 +508,34 @@ QMenu::item:selected, QListWidget::item:selected {{
 }}
 """
     atomic_write(cfg / "themes" / "Archonate.ovt", css)
+    obs_autoreload(cfg / "user.ini")
+
+
+def obs_autoreload(ini):
+    """Set [Appearance] AutoReload=true in OBS's user.ini, so OBS reloads its
+    theme when the file changes. Only while OBS is closed: it rewrites user.ini
+    from memory on exit, so an edit made while it runs would be lost (the next
+    switch with OBS closed sets it, and it takes effect from OBS's next start)."""
+    if not ini.is_file() or subprocess.run(["pgrep", "-x", "obs"], capture_output=True).returncode == 0:
+        return
+    lines = ini.read_text().splitlines()
+    sect, at, done = None, None, False
+    for i, ln in enumerate(lines):
+        t = ln.strip()
+        if t.startswith("[") and t.endswith("]"):
+            sect = t[1:-1]
+            if sect == "Appearance":
+                at = i + 1
+        elif sect == "Appearance" and t.split("=", 1)[0] == "AutoReload":
+            if t == "AutoReload=true":
+                return
+            lines[i], done = "AutoReload=true", True
+    if not done:
+        if at is None:
+            lines += ["", "[Appearance]"]
+            at = len(lines)
+        lines.insert(at, "AutoReload=true")
+    atomic_write(ini, "\n".join(lines) + "\n")
 
 
 def apply_claude(rice, desk):
