@@ -33,6 +33,7 @@ local system_monitor_tag = "system_monitor"
 local music_player_tag = "music_player"
 local communication_app_tag = "communication_app"
 local todo_app_tag = "todo_app"
+local obs_tag = "obs_studio"
 
 
 ----------------------
@@ -149,6 +150,7 @@ tagged_rule(communication_app_tag, {
 tagged_rule(todo_app_tag, {
     "todoist" -- Todoist
 }, "class")
+tagged_rule(obs_tag, { "com.obsproject.Studio" }, "class") -- OBS: its own scratchpad, SUPER + R
 
 
 -----------------------
@@ -194,6 +196,7 @@ create_tag(system_monitor_tag, { workspace = "special:sysmon" })
 create_tag(music_player_tag, { workspace = "special:music" })
 create_tag(communication_app_tag, { workspace = "special:communication" })
 create_tag(todo_app_tag, { workspace = "special:todo" })
+create_tag(obs_tag, { workspace = "special:obs" })
 
 
 -------------------------

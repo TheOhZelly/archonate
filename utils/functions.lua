@@ -116,6 +116,9 @@ local function default_config()
                 command = { "foot", "-a", "btop", "-T", "btop", "fish", "-C", "exec btop" },
             },
         },
+        obs = {
+            obs = { enable = true, match = { { class = "com.obsproject.Studio" } }, command = { "obs" }, move = true },
+        },
         todo = {
             todoist = { enable = true, match = { { class = "todoist" } }, command = { "todoist" }, move = true },
         },
