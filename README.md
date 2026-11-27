@@ -8,9 +8,9 @@ toolbar, the login screen.
 
 - **The design**: a notch bar hanging from the top edge over a line that
   ripples with your music, over a clean desktop: just your wallpaper.
-- **Styles**: change its colours and wallpapers in one go. It ships its own
-  style, downloads a set of dark themes to wear, or makes one from any
-  wallpaper of yours.
+- **Styles**: change its colours and wallpapers in one go. It downloads a set
+  of dark themes to wear, installs any theme from a git repo, or makes one
+  from any wallpaper of yours.
 - **Modes**: normal, gaming (the bar hides over fullscreen, the desktop goes
   quiet), minimal.
 - **Agent-ready**: every coding agent you have (Claude Code, Codex, OpenCode,
@@ -177,5 +177,5 @@ Archonate is free software under the [GPL-3.0](LICENSE).
   CoSMiC cHiLD.
 - Every sound is synthesised by `lib/archonate/make-sounds.py`; nothing is
   sampled.
-- Wallpapers come with the styles; the built-in style's is drawn in code.
+- Wallpapers come with the styles; the offline fallback style's is drawn in code.
   Details: [WALLPAPERS.md](WALLPAPERS.md).

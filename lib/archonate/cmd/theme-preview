@@ -8,6 +8,18 @@ set -e
 out_dir="$HOME/.local/state/hypr-rice/previews"
 mkdir -p "$out_dir"
 
+# A scratchpad (Claude, music, ...) open over the desktop would be in every
+# shot: hide it for the run and bring it back at the end
+scratch=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .specialWorkspace.name // ""' | sed 's/^special://')
+toggle_scratch() {
+    hyprctl eval "hl.dispatch(hl.dsp.workspace.toggle_special(\"$1\"))" >/dev/null 2>&1 || true
+}
+if [ -n "$scratch" ]; then
+    toggle_scratch "$scratch"
+    trap 'toggle_scratch "$scratch"' EXIT
+    sleep 0.4
+fi
+
 capture() {
     local rice ws prev mon pids=()
     rice=$(current_rice)
@@ -27,7 +39,16 @@ capture() {
     kitty --class archonate-preview-a -o confirm_os_window_close=0 sh -c "clear; fastfetch -c '$ffcfg'; sleep 60" &
     pids+=($!)
     sleep 0.5
-    kitty --class archonate-preview-b -o confirm_os_window_close=0 btop &
+    # btop without its process list: that would publish your user and process names
+    btcfg=$(mktemp -d)
+    mkdir -p "$btcfg/btop"
+    cp -r "$HOME/.config/btop/." "$btcfg/btop/" 2>/dev/null || true
+    if grep -q '^shown_boxes' "$btcfg/btop/btop.conf" 2>/dev/null; then
+        sed -i 's/^shown_boxes.*/shown_boxes = "cpu mem net"/' "$btcfg/btop/btop.conf"
+    else
+        echo 'shown_boxes = "cpu mem net"' >>"$btcfg/btop/btop.conf"
+    fi
+    kitty --class archonate-preview-b -o confirm_os_window_close=0 env XDG_CONFIG_HOME="$btcfg" btop &
     pids+=($!)
     sleep 1
     # Place them explicitly; the window rules alone sometimes lose to the
@@ -49,7 +70,7 @@ capture() {
     [ -f "$HYPR_DIR/rices/$rice/look.json" ] && cp "$out_dir/$rice.png" "$out_dir/$rice-$("$ARCHONATE_DIR/cmd/style-current" "$rice").png"
     hyprctl dispatch 'function() hl.config({ cursor = { invisible = false } }) end' >/dev/null
     kill "${pids[@]}" 2>/dev/null || true
-    rm -f "$ffcfg"
+    rm -rf "$ffcfg" "$btcfg"
     sleep 0.4
     hyprctl dispatch "hl.dsp.focus({ workspace = \"$prev\" })" >/dev/null
     echo "preview: $out_dir/$rice.png"

@@ -1898,8 +1898,12 @@ def style_state(rice):
 
 
 def styles(rice="archonate"):
+    """The styles to wear. The built-in one (lib/styles) is only a fallback for
+    a machine with none downloaded yet (offline install): it isn't listed once
+    there are others."""
     out, seen = [], set()
-    for base in (STYLES, SHIPPED_STYLES):
+    have_own = STYLES.is_dir() and any(STYLES.glob("*/style.json"))
+    for base in ((STYLES,) if have_own else (STYLES, SHIPPED_STYLES)):
         for d in sorted(base.glob("*/style.json")):
             try:
                 s = json.loads(d.read_text())
