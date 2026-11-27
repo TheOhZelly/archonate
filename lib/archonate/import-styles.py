@@ -1,6 +1,7 @@
 """Turn downloaded themes into Archonate styles (worn by the rices with a look.json).
 
     python3 -I import-styles.py <theme repo checkout> [--force] [--skip-logo=<name>]
+    python3 -I import-styles.py <one theme's checkout> --one=<name> [--force]
 
 Each dark theme becomes ~/.local/share/archonate/styles/<name>/:
     style.json      palette + ANSI in the shape desktop.json uses
@@ -15,8 +16,10 @@ import sys
 import tomllib
 from pathlib import Path
 
-SRC = Path(sys.argv[1]) / "themes"
 FORCE = "--force" in sys.argv
+# --one=<name>: the checkout is a single theme (its repo root), installed as <name>
+ONE = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--one=")), "")
+SRC = Path(sys.argv[1]) if ONE else Path(sys.argv[1]) / "themes"
 # wallpapers carrying the source project's own logo (named after it) are left out
 SKIP_LOGO = next((a.split("=", 1)[1].lower() for a in sys.argv if a.startswith("--skip-logo=")), "")
 HOME = Path.home()
@@ -104,25 +107,51 @@ def logo_wallpaper(out, bg, fg):
     im.save(out, optimize=True)
 
 
+def from_alacritty(path):
+    """The palette keys colors.toml would have, read from an older theme's
+    alacritty.toml (parsed as data only)."""
+    a = tomllib.loads(path.read_text()).get("colors", {})
+    p, n, b = a.get("primary", {}), a.get("normal", {}), a.get("bright", {})
+    c = {"background": p.get("background"), "foreground": p.get("foreground"),
+         "accent": n.get("blue")}
+    for k in ("red", "green", "yellow", "blue", "magenta", "cyan"):
+        c[k], c["bright_" + k] = n.get(k), b.get(k)
+    c["muted"], c["bright_foreground"] = b.get("black"), b.get("white")
+    return {k: v for k, v in c.items() if isinstance(v, str)}
+
+
+def palette_of(t):
+    if (t / "colors.toml").is_file():
+        return tomllib.loads((t / "colors.toml").read_text())
+    if (t / "alacritty.toml").is_file():
+        return from_alacritty(t / "alacritty.toml")
+    return None
+
+
 done, skipped = [], []
-for t in sorted(p for p in SRC.iterdir() if p.is_dir()):
-    ct = t / "colors.toml"
-    if not ct.is_file():
-        skipped.append(f"{t.name} (no colors.toml)")
+themes = [SRC] if ONE else sorted(p for p in SRC.iterdir() if p.is_dir())
+for t in themes:
+    name = ONE or t.name
+    try:
+        c = palette_of(t)
+    except Exception as e:
+        c = None
+        print(f"{name}: unreadable colours ({e})", file=sys.stderr)
+    if not c or not all(k in c for k in ("background", "foreground", "accent")):
+        skipped.append(f"{name} (no colours)")
         continue
-    c = tomllib.loads(ct.read_text())
-    if c.get("mode", "dark") != "dark":
-        skipped.append(f"{t.name} (light)")
+    if c.get("mode", "dark") != "dark" or (t / "light.mode").exists():
+        skipped.append(f"{name} (light)")
         continue
-    out = DEST / t.name
+    out = DEST / name
     if out.exists() and not FORCE:
-        skipped.append(f"{t.name} (already imported)")
+        skipped.append(f"{name} (already there; --force replaces it)")
         continue
     if out.exists():
         shutil.rmtree(out)
     (out / "backgrounds").mkdir(parents=True)
     palette, ansi = convert(c)
-    title = " ".join(w.capitalize() for w in t.name.split("-"))
+    title = " ".join(w.capitalize() for w in name.split("-"))
     # (newer theme sources ship no wallpapers: then the style gets ours only)
     src_bg = t / "backgrounds"
     for f in sorted(src_bg.iterdir()) if src_bg.is_dir() else []:
@@ -138,10 +167,10 @@ for t in sorted(p for p in SRC.iterdir() if p.is_dir()):
                 shutil.copy2(clip, out / "backgrounds" / "intros" / clip.name)
     logo_wallpaper(out / "backgrounds" / "zz-archonate.png", palette["bg"], palette["accent"])
     (out / "style.json").write_text(json.dumps({
-        "name": t.name, "title": title, "palette": palette, "ansi": ansi,
-        "folders": folder(palette["accent"]), "source": "imported",
+        "name": name, "title": title, "palette": palette, "ansi": ansi,
+        "folders": folder(palette["accent"]), "source": "installed" if ONE else "imported",
     }, indent=4) + "\n")
-    done.append(t.name)
+    done.append(name)
 
 print(f"imported {len(done)}: {' '.join(done)}")
 if skipped:

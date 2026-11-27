@@ -1,4 +1,4 @@
-// Rice + mode picker overlay (SUPER+F9 / SUPER+F10). Runs as its own
+// Style + mode picker overlay (SUPER+F9). Runs as its own
 // Quickshell instance, so it works from any rice.
 //   ←/→ move   ↑/↓ or Tab switch row   Enter apply   Esc close
 // PICKER_FOCUS=mode opens with the mode row selected.
@@ -30,6 +30,12 @@ ShellRoot {
     readonly property var selStyles: selStyled?.styles ?? []
     readonly property string selStyle: selStyled?.style ?? ""
     readonly property bool stylesShown: selStyles.length > 0
+    // type to narrow the styles down by name
+    property string filter: ""
+    readonly property var shown: filter ? selStyles.filter(s => (s.title + " " + s.name).toLowerCase().includes(filter.toLowerCase())) : selStyles
+    onFilterChanged: styleIndex = Math.max(0, shown.findIndex(s => s.name === selStyle))
+    // Delete asks first: the style it would remove, until another key
+    property string removing: ""
     onSelNameChanged: styleIndex = Math.max(0, selStyles.findIndex(s => s.name === selStyle))
 
     readonly property var current: data.rices.find(r => r.name === data.rice) ?? { bg: "1a1a1a", accent: "ffffff", text: "ffffff" }
@@ -39,8 +45,8 @@ ShellRoot {
     function apply(): void {
         if (onModes)
             Quickshell.execDetached([home + "/.local/bin/hypr-mode", data.modes[modeIndex]]);
-        else if (onStyles && stylesShown)
-            Quickshell.execDetached([home + "/.local/bin/archonate", "style", "set", selStyles[styleIndex].name, selName]);
+        else if (onStyles && stylesShown && shown.length)
+            Quickshell.execDetached([home + "/.local/bin/archonate", "style", "set", shown[styleIndex].name, selName]);
         else
             Quickshell.execDetached([home + "/.local/bin/hypr-rice", data.rices[riceIndex].name]);
         Qt.quit();
@@ -75,7 +81,7 @@ ShellRoot {
             left: true
             right: true
         }
-        color: Qt.rgba(0, 0, 0, 0.62)
+        color: Qt.rgba(0, 0, 0, 0.8)
 
         MouseArea {
             anchors.fill: parent
@@ -86,9 +92,30 @@ ShellRoot {
             anchors.fill: parent
             focus: true
             Keys.onPressed: event => {
-                const n = root.onModes ? root.data.modes.length : root.onStyles ? root.selStyles.length : root.data.rices.length;
-                if (event.key === Qt.Key_Escape)
-                    Qt.quit();
+                const n = root.onModes ? root.data.modes.length : root.onStyles ? root.shown.length : root.data.rices.length;
+                const typing = root.solo && root.onStyles;
+                const del = root.removing;
+                root.removing = "";
+                if (typing && event.key === Qt.Key_Delete) {
+                    const s = root.shown[root.styleIndex];
+                    if (s && s.mine) {
+                        if (del === s.name) {
+                            Quickshell.execDetached([root.home + "/.local/bin/archonate", "style", "remove", s.name]);
+                            root.data.styled[root.selName].styles = root.selStyles.filter(x => x.name !== s.name);
+                            root.data = Object.assign({}, root.data);
+                            root.styleIndex = Math.min(root.styleIndex, root.shown.length - 1);
+                        } else
+                            root.removing = s.name;
+                    }
+                } else if (event.key === Qt.Key_Escape) {
+                    if (typing && root.filter)
+                        root.filter = "";
+                    else
+                        Qt.quit();
+                } else if (typing && event.key === Qt.Key_Backspace)
+                    root.filter = root.filter.slice(0, -1);
+                else if (typing && event.text.length === 1 && event.text >= " " && event.text !== "\x7f" && !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)))
+                    root.filter += event.text;
                 else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
                     root.apply();
                 else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
@@ -116,12 +143,33 @@ ShellRoot {
             anchors.centerIn: parent
             spacing: 26
 
+            // One rice: the styles as a slanted carousel, the selected one large
+            Carousel {
+                visible: root.solo && root.stylesShown
+                width: win.width
+                items: visible ? root.shown : []
+                index: root.styleIndex
+                current: root.selStyle
+                dim: "#" + root.current.bg
+                onPicked: i => {
+                    root.onModes = false;
+                    root.onStyles = true;
+                    root.styleIndex = i;
+                }
+                onChosen: i => {
+                    root.styleIndex = i;
+                    root.apply();
+                }
+            }
+
             // The stage: a real look at the selected rice (its screenshot from
             // `archonate theme preview`, else its wallpaper), crossfading as you move
             Item {
                 id: stage
 
-                readonly property var style: root.stylesShown && root.onStyles ? root.selStyles[root.styleIndex] : null
+                visible: !root.solo
+
+                readonly property var style: root.stylesShown && root.onStyles ? root.shown[root.styleIndex] : null
                 readonly property var sel: style ?? root.data.rices[root.riceIndex] ?? null
                 readonly property string src: sel ? (sel.shot || sel.wallpaper) : ""
 
@@ -196,7 +244,7 @@ ShellRoot {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: stage.style ? (root.solo ? stage.style.title : root.selName + " · " + stage.style.title) : (stage.sel?.name ?? "")
+                    text: stage.style ? (root.solo ? stage.style.title : root.selName + " · " + stage.style.title) + (stage.style.name === root.selStyle ? "  ·  on" : "") : root.solo && root.onStyles && root.filter ? "no style matches" : (stage.sel?.name ?? "")
                     color: "white"
                     font.family: "Adwaita Sans"
                     font.pixelSize: 28
@@ -329,108 +377,6 @@ ShellRoot {
                 }
             }
 
-            // One rice: every style as a preview card, the selected one centred
-            ListView {
-                id: strip
-
-                anchors.horizontalCenter: parent.horizontalCenter
-                visible: root.solo && root.stylesShown
-                width: Math.min(win.width - 120, 1600)
-                height: 168
-                orientation: ListView.Horizontal
-                spacing: 16
-                clip: true
-                model: visible ? root.selStyles : []
-                currentIndex: root.styleIndex
-                highlightRangeMode: ListView.StrictlyEnforceRange
-                preferredHighlightBegin: width / 2 - 100
-                preferredHighlightEnd: width / 2 + 100
-                highlightMoveDuration: 220
-                boundsBehavior: Flickable.StopAtBounds
-                onCurrentIndexChanged: if (currentIndex !== root.styleIndex && currentIndex >= 0)
-                    root.styleIndex = currentIndex
-
-                delegate: Item {
-                    id: scard
-
-                    required property var modelData
-                    required property int index
-                    readonly property bool selected: root.onStyles && root.styleIndex === index
-                    readonly property bool isCurrent: modelData.name === root.selStyle
-
-                    width: 200
-                    height: strip.height
-                    opacity: selected ? 1 : 0.72
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: 160
-                        }
-                    }
-
-                    Rectangle {
-                        id: sframe
-
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: 8
-                        width: parent.width
-                        height: width * 0.5625
-                        radius: 12
-                        color: "#" + scard.modelData.bg
-                        border.width: scard.selected ? 3 : 1
-                        border.color: scard.selected ? "#" + scard.modelData.accent : Qt.rgba(1, 1, 1, 0.15)
-                        clip: true
-                        scale: scard.selected ? 1.05 : 1
-                        Behavior on scale {
-                            NumberAnimation {
-                                duration: 180
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-
-                        Image {
-                            anchors.fill: parent
-                            anchors.margins: sframe.border.width
-                            source: scard.modelData.shot ? "file://" + scard.modelData.shot : scard.modelData.wallpaper ? "file://" + scard.modelData.wallpaper : ""
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            sourceSize.width: 400
-                        }
-                    }
-                    Row {
-                        anchors.top: sframe.bottom
-                        anchors.topMargin: 12
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 7
-
-                        Rectangle {
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 9
-                            height: 9
-                            radius: 4.5
-                            color: "#" + scard.modelData.accent
-                        }
-                        Text {
-                            text: scard.modelData.title + (scard.isCurrent ? "  ·  on" : "")
-                            color: scard.selected ? "white" : Qt.rgba(1, 1, 1, 0.7)
-                            font.family: "Adwaita Sans"
-                            font.pixelSize: 14
-                            font.weight: scard.selected ? Font.DemiBold : Font.Normal
-                        }
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onEntered: {
-                            root.onModes = false;
-                            root.onStyles = true;
-                            root.styleIndex = scard.index;
-                        }
-                        onClicked: root.apply()
-                    }
-                }
-            }
-
             // Styles for the selected rice, if it wears them
             Flow {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -439,7 +385,7 @@ ShellRoot {
                 spacing: 8
 
                 Repeater {
-                    model: root.stylesShown ? root.selStyles : []
+                    model: root.stylesShown ? root.shown : []
 
                     Rectangle {
                         id: schip
@@ -547,7 +493,9 @@ ShellRoot {
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "←/→ choose   ·   ↑/↓ " + (root.solo ? "styles / modes" : "rices" + (root.stylesShown ? " / styles" : "") + " / modes") + "   ·   enter apply   ·   esc close"
+                text: root.removing ? "delete again to remove " + root.removing + " (to the trash)   ·   any other key keeps it"
+                    : root.solo && root.onStyles && root.filter ? "filter: " + root.filter + "   ·   backspace edit   ·   esc clear"
+                    : "←/→ choose   ·   type to filter   ·   ↑/↓ " + (root.solo ? "styles / modes" : "rices" + (root.stylesShown ? " / styles" : "") + " / modes") + "   ·   enter apply   ·   esc close"
                 color: Qt.rgba(1, 1, 1, 0.4)
                 font.family: "Adwaita Sans"
                 font.pixelSize: 12

@@ -21,7 +21,7 @@ first_of() {
 case "${1:?usage: archonate open <browser|editor|files|terminal|audio>}" in
     browser) launch_default x-scheme-handler/https firefox brave brave-origin chromium zen-browser librewolf ;;
     editor) launch_default text/plain zeditor code codium kate gnome-text-editor "kitty nvim" "kitty nano" ;;
-    files) launch_default inode/directory thunar nautilus dolphin nemo pcmanfm ;;
+    files) launch_default inode/directory luciole thunar nautilus dolphin nemo pcmanfm ;;
     terminal) first_of kitty foot alacritty ghostty wezterm ;;
     audio) first_of pwvucontrol pavucontrol "archonate panel sound" ;;
     *) echo "unknown: $1 (browser, editor, files, terminal, audio)" >&2; exit 1 ;;

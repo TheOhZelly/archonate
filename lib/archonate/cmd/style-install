@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+. "$ARCHONATE_DIR/common.sh"
+# archonate:summary=Add a style from any theme's git repo (colours and wallpapers only; nothing in it runs)
+# archonate:args=<git url> [name] [--force]
+# The theme repo needs a colors.toml (or an older alacritty.toml) at its root;
+# its backgrounds/ become the style's wallpapers. Only those are read: as data
+# (TOML parsed, images copied), never sourced or run, so a stranger's repo is safe.
+url=${1:?usage: archonate style install <git url> [name] [--force]}; shift
+force=; name=
+for a in "$@"; do [ "$a" = --force ] && force=--force || name=$a; done
+case "$url" in https://*|git@*|ssh://*) ;; *) echo "that doesn't look like a git url: $url" >&2; exit 1 ;; esac
+# name: the repo's, without the usual "-theme" and distro prefixes
+if [ -z "$name" ]; then
+    name=${url%/}; name=${name%.git}; name=${name##*/}; name=${name,,}
+    name=$(sed -E 's/^(omarchy|hyprland|hypr)-//; s/-?themes?$//; s/^theme-//' <<<"$name")
+fi
+name=$(tr -c 'a-z0-9\n-' '-' <<<"${name,,}" | sed -E 's/-+/-/g; s/^-|-$//g')
+[ -n "$name" ] || { echo "couldn't make a name from $url; give one: archonate style install <url> <name>" >&2; exit 1; }
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+echo "downloading $url ..."
+GIT_TERMINAL_PROMPT=0 git clone -q --depth 1 --no-recurse-submodules "$url" "$tmp/theme" || { echo "couldn't download it (private repo, or no network?)" >&2; exit 1; }
+out=$(python3 -I "$ARCHONATE_DIR/import-styles.py" "$tmp/theme" --one="$name" $force) || exit 1
+echo "$out"
+grep -q "^imported 1" <<<"$out" || exit 1
+echo "wear it: archonate style set $name   (or pick it with Super + F9)"

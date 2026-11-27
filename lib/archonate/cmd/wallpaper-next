@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 . "$ARCHONATE_DIR/common.sh"
 # archonate:summary=Next wallpaper of this rice
+python3 "$ARCHONATE_PY" walls-refresh
 shell_ipc nextWallpaper

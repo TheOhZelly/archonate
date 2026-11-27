@@ -93,6 +93,7 @@ and the full list, or `archonate help <group>` for one group.
 ```bash
 archonate style set gruvbox             # other colours and wallpapers (style list, pick)
 archonate style from ~/Pictures/x.jpg   # a new style made from any wallpaper
+archonate style install <git url>       # a community theme as a style (colours and wallpapers only)
 archonate mode set gaming               # normal, gaming, minimal
 archonate toggle nightlight             # dnd caffeine gaming widgets shader screensaver
 archonate wallpaper pick                # wallpaper switcher (also next, prev)
@@ -125,7 +126,9 @@ Archonate gets along with AI coding agents without depending on any:
   ignored by git. `user.lua.example` shows the common ones.
 - **Default apps**: Settings > Default apps. The app keys open whatever is
   set there.
-- **Wallpapers**: each style brings its own; `archonate style from <image>`
+- **Wallpapers**: each style brings its own; put yours for a style in
+  `~/.local/share/archonate/backgrounds/<style>/` and they join them (the
+  menu's Wallpaper > Add your own opens it). `archonate style from <image>`
   makes a style from yours. Switch with Super + Ctrl + W.
 - **Day and night**: Settings > Day & night switches style by time of day.
 - **Hooks**: scripts in `~/.config/archonate/hooks/<event>.d/` run on

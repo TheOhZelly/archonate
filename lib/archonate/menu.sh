@@ -90,12 +90,19 @@ menu_mode() {
 
 menu_wallpaper() {
     local c
-    c=$(pick "wallpaper" "󰋩   Switcher" "󰒭   Next" "󰒮   Previous" "󰝰   Open the folder" "󰋩   Wallpaper settings") || return
+    c=$(pick "wallpaper" "󰋩   Switcher" "󰒭   Next" "󰒮   Previous" "󰝰   Add your own (opens the folder)" "󰋩   Wallpaper settings") || return
     case "$c" in
         *Switcher*) "$A" wallpaper pick ;;
         *Next*) "$A" wallpaper next ;;
         *Previous*) "$A" wallpaper prev ;;
-        *folder*) xdg-open "$HYPR_DIR/rices/$rice/assets/wallpapers" 2>/dev/null || xdg-open "$HYPR_DIR/rices/$rice/assets" ;;
+        *folder*)
+            # a style's wallpapers come with it; yours for it go in your own folder
+            # (they join the style's on the next switch, or right away with "Next")
+            local st; st=$("$A" style current 2>/dev/null)
+            if [ -n "$st" ] && python3 "$ARCHONATE_PY" style-rice >/dev/null 2>&1; then
+                mkdir -p "$HOME/.local/share/archonate/backgrounds/$st"
+                xdg-open "$HOME/.local/share/archonate/backgrounds/$st"
+            else xdg-open "$HYPR_DIR/rices/$rice/assets/wallpapers" 2>/dev/null || xdg-open "$HYPR_DIR/rices/$rice/assets"; fi ;;
         *settings*) "$A" settings wallpaper ;;
     esac
 }

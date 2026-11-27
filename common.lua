@@ -3,12 +3,8 @@
 local home   = os.getenv("HOME")
 local picker = "qs -p " .. home .. "/.config/hypr/picker"
 
--- Visual pickers (toggle): SUPER + F9 rices, SUPER + F10 modes.
-local function toggle(env)
-    return hl.dsp.exec_cmd(picker .. " kill >/dev/null 2>&1 || " .. env .. picker)
-end
-hl.bind("SUPER + F9", toggle(""))
-hl.bind("SUPER + F10", toggle("PICKER_FOCUS=mode "))
+-- The style picker (toggle): styles, with the mode row under them
+hl.bind("SUPER + F9", hl.dsp.exec_cmd(picker .. " kill >/dev/null 2>&1 || " .. picker))
 
 -- The rice-switch cover appears instantly (its fade is its own)
 hl.layer_rule({ match = { namespace = "archonate-cover" }, no_anim = true })
