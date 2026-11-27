@@ -1,7 +1,7 @@
 // One rice's whole desktop: wallpaper, bar (per rice), notifications + center,
 // volume OSD, lockscreen, and the IPC that the Hyprland keybinds call:
 //   qs -p <shell dir> ipc call rice <lock|toggleCenter|clearNotifs|media X|setMode M|
-//                                   nextWallpaper|prevWallpaper|setWidgets B|previewLock>
+//                                   nextWallpaper|prevWallpaper|previewLock>
 //
 // The rice passes `bar`, a Component whose root takes `required property var
 // modelData` (the screen); it can reach `services`/`notifs` through the
@@ -150,16 +150,6 @@ Scope {
         services: svc
     }
 
-    Widget {
-        id: widget
-
-        theme: root.theme
-        services: svc
-        pos: cfg.riceVal("widgetPos", root.theme.widgetPos ?? "bottom-left")
-        // A rice with its own widgets (theme.ownWidgets) draws them in its shell.qml
-        shown: tog.widgets && !(root.theme.ownWidgets ?? false)
-    }
-
     Screensaver {
         id: saver
 
@@ -247,8 +237,6 @@ Scope {
         function media(cmd: string): void {
             svc.media(cmd);
         }
-        // Kept for old callers; the widget follows effects.json by itself
-        function setWidgets(on: bool): void {}
         function setMode(name: string): void {
             root.mode = name;
         }

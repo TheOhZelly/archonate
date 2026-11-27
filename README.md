@@ -1,14 +1,13 @@
 # Archonate
 
-![Archonate in the solitude style: the notch bar, media card, visualizer, poster clock and stats over a hand-drawn wallpaper](docs/screenshots/solitude.webp)
+![Archonate in the solitude style: the notch bar over a hand-drawn wallpaper](docs/screenshots/solitude.webp)
 
 An opinionated Hyprland desktop with one design, and every app dressed to
 match it: terminal, file manager, editor, Spotify, Discord, the browser's
 toolbar, the login screen.
 
 - **The design**: a notch bar hanging from the top edge over a line that
-  ripples with your music, and a living desktop (visualizer, media card,
-  poster clock, system stats).
+  ripples with your music, over a clean desktop: just your wallpaper.
 - **Styles**: change its colours and wallpapers in one go. It ships its own
   style, downloads a set of dark themes to wear, or makes one from any
   wallpaper of yours.
@@ -95,7 +94,7 @@ archonate style set gruvbox             # other colours and wallpapers (style li
 archonate style from ~/Pictures/x.jpg   # a new style made from any wallpaper
 archonate style install <git url>       # a community theme as a style (colours and wallpapers only)
 archonate mode set gaming               # normal, gaming, minimal
-archonate toggle nightlight             # dnd caffeine gaming widgets shader screensaver
+archonate toggle nightlight             # dnd caffeine gaming shader screensaver intros
 archonate wallpaper pick                # wallpaper switcher (also next, prev)
 archonate install gaming                # a curated list (or package names, or: search, aur)
 archonate webapp new Notion notion.so   # any site as an app in the launcher (tui new for terminal apps)
@@ -157,7 +156,8 @@ run to fix each thing it finds.
   desktop: Bar + Theme), `fuzzel.ini`, `assets/` (wallpapers, sounds, logo).
 - `qs-common/`: what every rice's shell shares: wallpaper, notifications,
   OSD, lock, screensaver, quick panels, the menu, the cheat sheet.
-- `lib/desktop.py`: swaps rices and themes the apps from `lib/templates`.
+- `lib/desktop.py`: swaps rices and themes the apps from `lib/templates`, all
+  in one design language: [docs/DESIGN.md](docs/DESIGN.md).
   `lib/archonate/`: the CLI and its commands.
 - `settings/`, `picker/`, `wallswitch/`, `login/`: the Settings app, the rice
   picker, the wallpaper switcher, the SDDM theme.

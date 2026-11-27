@@ -45,15 +45,7 @@ QtObject {
     // Wallpapers: assets/wallpaper.* + assets/wallpapers/*; rotate every N minutes (0 = only on SUPER+SHIFT+W)
     readonly property int wallpaperMinutes: 0
 
-    // archonate draws its own desktop widgets (shell.qml); the stock one stays off.
-    // SUPER+F12 still toggles them all.
-    readonly property bool ownWidgets: true
     readonly property bool wearsStyles: true // look.json: styles dress this rice
-    readonly property string widgetPos: "top-right"
-    readonly property int widgetClockSize: 190
-    readonly property color widgetClockColor: text
-    readonly property bool widgetItalic: false
-    readonly property bool widgetCard: false
 
     // Lockscreen
     readonly property string lockTitle: "archonate"

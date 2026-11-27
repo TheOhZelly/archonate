@@ -283,6 +283,23 @@ def logo_a_svg(fill="000000", fill2=None):
             + (f'<g fill="#{fill2}">' + "".join(rects2) + "</g>" if rects2 else "") + "</svg>")
 
 
+def scss_libs(tmp, desk, rice=None):
+    """_colours.scss and _look.scss in `tmp`, for the app themes written in Sass
+    (Discord, Spotify): the rice's palette and its look (font, corners, borders,
+    casing), and the logo's A."""
+    c = colour_map(desk)
+    (Path(tmp) / "_colours.scss").write_text(gen_scss(c))
+    look = rice_look(rice or active_rice())
+    lc = look.get("border") or (mix(look["palette"].get("surface_hi", "474f50"), look["palette"].get("text", "ffffff"), 0.2) + "ff")
+    (Path(tmp) / "_look.scss").write_text(
+        f'$font: "{look.get("font") or "sans-serif"}";\n$radius: {look.get("radius", 12)};\n'
+        f'$bw: {look.get("borderWidth", 1)};\n$border: #{lc};\n$caps: "{look.get("caps", "none")}";\n'
+        f'$tracking: {look.get("tracking", 0.0)};\n'
+        + "".join(f'${k}: #{desk["palette"][k]};\n' for k in ("bg", "text", "accent"))
+        + '$logo-a: "data:image/svg+xml;base64,'
+        + __import__("base64").b64encode(logo_a_svg(desk["palette"]["accent"], desk["palette"].get("secondary")).encode()).decode() + '";\n')
+
+
 def apply_apps(desk, rice=None):
     """btop, Qt (qtengine), nvtop, htop, Zed (theme "Archonate"), cava and
     Discord themes for this rice, from lib/templates. Discord's theme takes the
@@ -329,16 +346,7 @@ def apply_apps(desk, rice=None):
 
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
-        (Path(tmp) / "_colours.scss").write_text(gen_scss(c))
-        look = rice_look(rice or active_rice())
-        lc = look.get("border") or (mix(look["palette"].get("surface_hi", "474f50"), look["palette"].get("text", "ffffff"), 0.2) + "ff")
-        (Path(tmp) / "_look.scss").write_text(
-            f'$font: "{look.get("font") or "sans-serif"}";\n$radius: {look.get("radius", 12)};\n'
-            f'$bw: {look.get("borderWidth", 1)};\n$border: #{lc};\n$caps: "{look.get("caps", "none")}";\n'
-            f'$tracking: {look.get("tracking", 0.0)};\n'
-            + "".join(f'${k}: #{desk["palette"][k]};\n' for k in ("bg", "text", "accent"))
-            + '$logo-a: "data:image/svg+xml;base64,'
-            + __import__("base64").b64encode(logo_a_svg(desk["palette"]["accent"], desk["palette"].get("secondary")).encode()).decode() + '";\n')
+        scss_libs(tmp, desk, rice)
         rdir = HYPR / "rices" / (rice or active_rice() or "")
         own, extra = rdir / "discord.theme.scss", rdir / "discord.scss"
         # a rice's own whole theme replaces the shared one (falling back to it on a compile error)
@@ -1200,16 +1208,26 @@ def apply_spotify(rice, desk):
                 continue
             sections.append("\n".join([
                 f"[{d.name}]",
-                f"text = {q['text']}", f"subtext = {q['text_dim']}", f"main = {q['bg']}",
-                f"sidebar = {q['bg']}", f"player = {q['surface']}", f"card = {q['surface']}",
-                f"shadow = 000000", f"selected-row = {q['text_dim']}", f"button = {q['accent']}",
+                f"text = {q['text']}", f"subtext = {mix(q['text'], q['bg'], 0.45)}", f"main = {q['bg']}",
+                f"sidebar = {q['bg']}", f"player = {q['bg']}", f"card = {mix(q['bg'], q['text'], 0.06)}",
+                f"shadow = 000000", f"selected-row = {q['text']}", f"button = {q['accent']}",
                 f"button-active = {q['accent']}", f"button-disabled = {q['surface_hi']}",
                 f"tab-active = {q['surface_hi']}", f"notification = {q['surface_hi']}",
                 f"notification-error = {q['error']}", f"misc = {q['surface_hi']}",
             ]))
         SPICETIFY_THEME.mkdir(parents=True, exist_ok=True)
         (SPICETIFY_THEME / "color.ini").write_text("\n\n".join(sections) + "\n")
-        (SPICETIFY_THEME / "user.css").touch()
+        # the layout and look (lib/templates/spotify.scss), for this rice
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            scss_libs(tmp, desk, rice)
+            r = subprocess.run(["sass", "--no-source-map", "-I", tmp, str(TEMPLATES / "spotify.scss")],
+                               capture_output=True, text=True)
+        if r.returncode == 0:
+            (SPICETIFY_THEME / "user.css").write_text(r.stdout)
+        else:
+            print(f"archonate: spotify: {r.stderr.strip()}", file=sys.stderr)
+            (SPICETIFY_THEME / "user.css").touch()
         run("spicetify", "config", "current_theme", "hypr-rice", "color_scheme", rice)
     detach(sys.executable, str(HYPR / "lib/desktop.py"), "spotify-reload")
 
@@ -1314,7 +1332,7 @@ def theme_defaults(rice):
     out = {}
     f = shell_dir(rice) / "Theme.qml"
     if f.is_file():
-        for key, val in re.findall(r"readonly property \w+ (notifSound|widgetPos|wallpaperMinutes): ([^\n]+)", f.read_text()):
+        for key, val in re.findall(r"readonly property \w+ (notifSound|wallpaperMinutes): ([^\n]+)", f.read_text()):
             val = val.split("//")[0].strip()
             out[key] = int(val) if val.isdigit() else val.strip('"')
     return out
@@ -1523,7 +1541,7 @@ def settings_info():
         "sounds": [{"name": n, "path": p} for n, p in SOUNDS],
         "global": {
             "idleMinutes": 10, "screenOffMinutes": 15, "dnd": False, **g,
-            "shader": eff.get("shader", True), "widgets": eff.get("widgets", True),
+            "shader": eff.get("shader", True),
             "screensaver": eff.get("screensaver", True),
         },
     }))
@@ -1555,7 +1573,7 @@ def set_wallpaper(rice, index):
 
 
 def effect(name, action="toggle"):
-    """shader / widgets / screensaver / intros on, off or toggle. Persisted in effects.json."""
+    """shader / screensaver / intros on, off or toggle. Persisted in effects.json."""
     try:
         state = json.loads(EFFECTS.read_text())
     except (OSError, json.JSONDecodeError):
@@ -1569,8 +1587,6 @@ def effect(name, action="toggle"):
     rice = Path(os.readlink(link)).parent.name if link.is_symlink() else None
     if name == "shader":
         run("hyprctl", "reload")
-    elif name == "widgets" and rice and is_standalone(rice):
-        run("qs", "-p", str(shell_dir(rice)), "ipc", "call", "rice", "setWidgets", "true" if state[name] else "false")
     print(f"{name}: {'on' if state[name] else 'off'}")
     run_hook("toggle", name, "on" if state[name] else "off")
 
@@ -1674,7 +1690,6 @@ EXTRA_BINDS = [
     ("Windows", "SUPER + H", "Minimize to the dock (floating layout)"),
     ("Desktop", "SUPER + Escape", "Archonate menu (everything)"),
     ("Desktop", "SUPER + F9", "Style picker (and modes, one row down)"),
-    ("Desktop", "SUPER + F12", "Desktop widget on/off"),
     ("Desktop", "SUPER + I", "Settings"),
     ("Clipboard & emoji", "SUPER + CTRL + SHIFT + V", "Forget the whole clipboard history"),
     ("Desktop", "SUPER + CTRL + W", "Wallpaper switcher"),
@@ -2234,7 +2249,6 @@ TOGGLES = {
     "dnd": ("Do not disturb", "do_not_disturb_on"),
     "caffeine": ("Keep awake", "coffee"),
     "gaming": ("Gaming mode", "sports_esports"),
-    "widgets": ("Desktop widget", "widgets"),
     "shader": ("Screen shader", "auto_awesome"),
     "screensaver": ("Screensaver", "animation"),
     "intros": ("Wallpaper intros", "movie"),
@@ -2296,7 +2310,7 @@ def toggles_info():
 
 
 def main(argv):
-    if len(argv) in (3, 4) and argv[1] == "effect" and argv[2] in ("shader", "widgets", "screensaver", "intros"):
+    if len(argv) in (3, 4) and argv[1] == "effect" and argv[2] in ("shader", "screensaver", "intros"):
         effect(*argv[2:])
     elif len(argv) in (3, 4) and argv[1] == "toggle":
         toggle(*argv[2:])

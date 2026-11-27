@@ -27,7 +27,6 @@ SETTINGS = [
     ("barTray", "true|false", "archonate bar: tray icons"),
     ("barVolume", "true|false", "archonate bar: volume percentage"),
     ("barWave", "true|false", "archonate bar: the music line across the top"),
-    ("widgetPos", '"top-left"|"top-right"|"bottom-left"|"bottom-right"|"center"', "the stock desktop widget's corner (rices without their own widgets)"),
     ("notifSound", '"rice:notify"|path|""', "sound for new notifications (\"\" = silent)"),
     ("wallpaperMinutes", "number", "rotate wallpapers every N minutes (0 = only on demand)"),
     ("idleMinutes", "number", "--global: lock after N idle minutes"),

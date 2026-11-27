@@ -31,7 +31,7 @@ ColumnLayout {
     }
 
     SHeading {
-        text: "Bar & desktop"
+        text: "Bar"
     }
     SNote {
         Layout.fillWidth: true
@@ -92,21 +92,6 @@ ColumnLayout {
             label: "Music line"
             note: "The hairline across the top that ripples with whatever's playing."
             key: "barWave"
-        }
-    }
-
-    SSection {
-        title: "Desktop"
-    }
-    SCard {
-        SRow {
-            label: "Desktop widgets"
-            note: "The visualizer, media card, clock and stats on the wallpaper. Off in gaming mode. SUPER+F12."
-
-            SToggle {
-                checked: App.global("widgets", true)
-                onToggled: App.toggle("widgets", !checked)
-            }
         }
     }
 }

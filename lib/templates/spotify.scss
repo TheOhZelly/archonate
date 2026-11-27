@@ -1,0 +1,322 @@
+/* Spotify wearing the rice (Spicetify user.css), in the same design language as
+   the Claude app and Discord (lib/templates/discord.scss): one background, the
+   panels flush and split by hairlines instead of floating cards, neutral fills
+   for hover and selection, the text colour for the main buttons, the accent
+   only for what's live (progress, now playing, focus), the rice's font,
+   corners and casing. No album-colour washes: the cover art is the colour.
+   Written by archonate on every rice or style switch (desktop.py apply_spotify).
+
+   Spotify's class names: the long-lived ones only (.Root__*, .main-*-*,
+   encore's colour sets and its custom properties), never hashed ones. */
+
+@use "sass:color";
+@use "sass:math";
+@use "colours" as c;
+@use "look" as l;
+
+@function r($k) {
+    @return math.round(l.$radius * $k) * 1px;
+}
+
+$bg: l.$bg;
+$text: l.$text;
+$accent: l.$accent;
+$raised: color.mix($text, $bg, 6%);
+$high: color.mix($text, $bg, 10%);
+$dim: color.mix($text, $bg, 82%);
+$faint: color.mix($text, $bg, 55%);
+$line: color.change($text, $alpha: 0.13);
+$hair: color.change($text, $alpha: 0.07);
+$hov: color.change($text, $alpha: 0.05);
+$sel: color.change($text, $alpha: 0.09);
+$bw: l.$bw * 1px;
+$font: l.$font, sans-serif;
+
+// ---- tokens: encore (Spotify's design system) ------------------------------------
+:root,
+.encore-dark-theme,
+.encore-dark-theme .encore-base-set,
+.encore-dark-theme .encore-muted-accent-set,
+.encore-dark-theme .encore-inverted-light-set {
+    --encore-body-font-stack: #{$font} !important;
+    --encore-title-font-stack: #{$font} !important;
+    --encore-variable-font-stack: #{$font} !important;
+    --background-base: #{$bg} !important;
+    --background-highlight: #{$hov} !important;
+    --background-press: #{$sel} !important;
+    --background-elevated-base: #{$raised} !important;
+    --background-elevated-highlight: #{$high} !important;
+    --background-elevated-press: #{$high} !important;
+    --background-tinted-base: #{$hov} !important;
+    --background-tinted-highlight: #{$sel} !important;
+    --background-tinted-press: #{$sel} !important;
+    --text-base: #{$text} !important;
+    --text-subdued: #{$faint} !important;
+    --text-bright-accent: #{$accent} !important;
+    --essential-base: #{$text} !important;
+    --essential-subdued: #{$faint} !important;
+    --essential-bright-accent: #{$accent} !important;
+    --decorative-base: #{$text} !important;
+    --decorative-subdued: #{$line} !important;
+    --panel-gap: 0px !important;
+}
+
+// the album/artist colour Spotify sets inline on a page's wrapper (whatever its
+// class): the background stays the rice's, so no colour washes anywhere
+[style*="--background-base"],
+[style*="--background-base-min-contrast"],
+// and the hashed-class gradients under headers and the action bar that read it
+// from further up: pinned on everything in the main view but the button sets
+.Root__main-view *:not(.encore-bright-accent-set):not(.encore-inverted-light-set):not(.encore-bright-accent-set *) {
+    --background-base: #{$bg} !important;
+    --background-base-min-contrast: #{$bg} !important;
+    --background-base-20: #{$bg} !important;
+    --background-base-70: #{$bg} !important;
+    --background-noise: none !important;
+}
+// the band behind the play button row
+.playlist-playlist-actionBarBackground-background,
+.main-actionBarBackground-background {
+    background: transparent !important;
+    background-image: none !important;
+}
+
+// its font stack is set again (with !important) on these wrappers
+.spotify-mix-non-latin,
+[class*="spotify-mix"],
+.encore-text,
+body {
+    --encore-body-font-stack: #{$font} !important;
+    --encore-title-font-stack: #{$font} !important;
+    --encore-variable-font-stack: #{$font} !important;
+    --fallback-fonts: #{$font} !important;
+}
+
+// the main buttons (play, follow, save): the text colour, as the Claude app's
+.encore-bright-accent-set {
+    --background-base: #{$text} !important;
+    --background-highlight: #{$text} !important;
+    --background-press: #{$dim} !important;
+    --text-base: #{$bg} !important;
+    --essential-base: #{$bg} !important;
+}
+
+// ---- type ------------------------------------------------------------------------
+body,
+button,
+input,
+textarea,
+.encore-text {
+    font-family: $font !important;
+}
+// labels in the rice's casing
+.main-trackList-trackListHeaderRow,
+.main-yourLibraryX-filterArea button,
+.main-type-minuetBold {
+    text-transform: unquote(l.$caps) !important;
+    letter-spacing: l.$tracking * 1em !important;
+}
+.main-entityHeader-title h1,
+.main-entityHeader-title span {
+    letter-spacing: -0.02em !important;
+}
+
+// ---- layout: one frame, split by hairlines ---------------------------------------
+body,
+.Root,
+.Root__top-container {
+    background: $bg !important;
+}
+.Root__top-container {
+    gap: 0 !important;
+    padding: 0 !important;
+}
+.Root__nav-bar,
+.Root__main-view,
+.Root__right-sidebar,
+.Root__now-playing-bar,
+.Root__globalNav,
+.main-view-container,
+.main-yourLibraryX-library,
+.main-buddyFeed-container {
+    background: $bg !important;
+    border-radius: 0 !important;
+}
+.Root__globalNav {
+    border-bottom: $bw solid $line !important;
+}
+.Root__nav-bar {
+    border-right: $bw solid $line !important;
+}
+.Root__right-sidebar {
+    border-left: $bw solid $line !important;
+}
+.Root__now-playing-bar {
+    border-top: $bw solid $line !important;
+}
+// the resize handles stay, invisible until used
+.LayoutResizer__resize-bar {
+    background: transparent !important;
+}
+
+// no album-colour washes behind headers
+.main-entityHeader-backgroundColor,
+.main-entityHeader-overlay,
+.main-actionBarBackground-background,
+.main-home-homeHeader,
+.main-topBar-background {
+    background: transparent !important;
+    background-image: none !important;
+}
+.main-entityHeader-container {
+    border-bottom: $bw solid $hair !important;
+}
+.main-topBar-container,
+.main-topBar-topbarContentWrapper {
+    background: transparent !important;
+}
+
+// ---- lists ------------------------------------------------------------------------
+.main-trackList-trackListHeader {
+    background: $bg !important;
+    border-bottom: $bw solid $hair !important;
+}
+.main-trackList-trackListRow {
+    border-radius: r(0.6) !important;
+    &:hover,
+    &:focus-within {
+        background: $hov !important;
+    }
+}
+.main-trackList-selected,
+.main-trackList-selected:hover {
+    background: $sel !important;
+}
+// the playing track: its title in the accent
+.main-trackList-active .main-trackList-rowTitle,
+.main-trackList-playingIcon {
+    color: $accent !important;
+}
+.main-yourLibraryX-listItem > div,
+.main-yourLibraryX-listItemGroup [role="row"] > div {
+    border-radius: r(0.6) !important;
+}
+.main-yourLibraryX-listItem:hover > div,
+.main-yourLibraryX-listRowItem:hover {
+    background: $hov !important;
+}
+.main-yourLibraryX-listItem[aria-selected="true"] > div,
+.main-yourLibraryX-listItem .main-yourLibraryX-listRowItem[aria-selected="true"] {
+    background: $sel !important;
+}
+
+// ---- cards: flat, hover fill only -------------------------------------------------
+.main-card-card,
+.main-shelf-shelf [data-encore-id="card"] {
+    background: transparent !important;
+    border-radius: r(0.8) !important;
+    box-shadow: none !important;
+    &:hover {
+        background: $hov !important;
+    }
+}
+.main-card-imageContainer img,
+.main-image-image.main-cardImage-image {
+    border-radius: r(0.6) !important;
+}
+.main-entityHeader-image,
+.main-entityHeader-imageContainer img {
+    border-radius: r(0.8) !important;
+    box-shadow: none !important;
+}
+
+// chips (filters): outlined, the selected one filled
+[role="checkbox"][data-encore-id="chip"] span,
+button[data-encore-id="chip"] span {
+    background: transparent !important;
+    border: $bw solid $line !important;
+    color: $dim !important;
+}
+[aria-checked="true"][data-encore-id="chip"] span,
+[aria-pressed="true"][data-encore-id="chip"] span {
+    background: $text !important;
+    border-color: $text !important;
+    color: $bg !important;
+}
+
+// ---- the search box: framed, an accent glow on focus ------------------------------
+.main-globalNav-searchSection form,
+.x-searchInput-searchInput,
+form[role="search"] {
+    background: transparent !important;
+}
+input[data-testid="search-input"],
+.x-searchInput-searchInputInput {
+    background: $bg !important;
+    border: $bw solid $line !important;
+    border-radius: r(0.8) !important;
+    box-shadow: none !important;
+    color: $text !important;
+    &:hover {
+        background: $hov !important;
+    }
+    &:focus {
+        border-color: $accent !important;
+        box-shadow: 0 0 0 3px color.change($accent, $alpha: 0.18) !important;
+    }
+}
+.main-globalNav-searchContainer button,
+.main-globalNav-link-icon {
+    background: transparent !important;
+}
+
+// ---- popups and menus: raised, framed ---------------------------------------------
+.main-contextMenu-menu,
+#context-menu ul,
+.main-popover,
+.GenericModal,
+[data-tippy-root] .main-trackInfo-tooltip {
+    background: $raised !important;
+    border: $bw solid $line !important;
+    border-radius: r(0.8) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35) !important;
+}
+.main-contextMenu-menuItemButton:hover,
+.main-contextMenu-menuItemButton:focus {
+    background: $hov !important;
+}
+.main-contextMenu-dividerAfter,
+.main-contextMenu-dividerBefore {
+    border-color: $hair !important;
+}
+
+// ---- the player ---------------------------------------------------------------------
+.playback-bar,
+.volume-bar,
+.x-progressBar-progressBarBg {
+    --bg-color: #{color.change($text, $alpha: 0.15)} !important;
+    --fg-color: #{$text} !important;
+    --is-active-fg-color: #{$accent} !important;
+}
+.x-progressBar-fillColor {
+    background: $accent !important;
+}
+.progress-bar__slider {
+    background: $text !important;
+}
+.main-nowPlayingWidget-coverArt img,
+.main-coverSlotCollapsed-container img {
+    border-radius: r(0.5) !important;
+}
+
+// ---- scrollbars: thin, quiet --------------------------------------------------------
+.os-scrollbar-handle {
+    background: color.change($text, $alpha: 0.16) !important;
+    border-radius: 99px !important;
+}
+.os-scrollbar-handle:hover {
+    background: color.change($text, $alpha: 0.28) !important;
+}
+::selection {
+    background: color.change($accent, $alpha: 0.35);
+}

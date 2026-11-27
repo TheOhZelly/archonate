@@ -18,7 +18,6 @@ Scope {
     readonly property bool dnd: cfg.globalVal("dnd", false)
     readonly property bool caffeine: cfg.globalVal("caffeine", false)
     readonly property bool gaming: mode === "gaming"
-    readonly property bool widgets: effects.widgets ?? true
     readonly property bool screensaver: effects.screensaver ?? true
     readonly property bool intros: effects.intros ?? true
 
@@ -28,7 +27,6 @@ Scope {
         ["nightlight", "Night light", "nightlight", "light_mode"],
         ["caffeine", "Keep awake", "coffee", "bedtime"],
         ["gaming", "Gaming mode", "sports_esports", "sports_esports"],
-        ["widgets", "Desktop widget", "widgets", "widgets"],
         ["screensaver", "Screensaver", "animation", "animation"],
         ["intros", "Wallpaper intros", "movie", "movie"]
     ]
@@ -76,7 +74,6 @@ Scope {
     onDndChanged: check()
     onCaffeineChanged: check()
     onGamingChanged: check()
-    onWidgetsChanged: check()
     onScreensaverChanged: check()
     onIntrosChanged: check()
 

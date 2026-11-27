@@ -127,7 +127,7 @@ switch_main() {
             ;;
         --spotify) python3 "$HYPR_DIR/lib/desktop.py" spotify ;;
         --effect) python3 "$HYPR_DIR/lib/desktop.py" effect "$2" "${3:-toggle}" ;;
-        -h | --help) echo "usage: hypr-$KIND [name | --pick | --list | --effect shader|widgets [on|off|toggle]]" ;;
+        -h | --help) echo "usage: hypr-$KIND [name | --pick | --list | --effect shader|screensaver|intros [on|off|toggle]]" ;;
         *) switch_to "$1" ;;
     esac
 }

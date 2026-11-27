@@ -1,6 +1,6 @@
 ---
 name: archonate
-description: Drive and customise this Archonate desktop (Hyprland on Arch/CachyOS) - switch rice, style, mode or wallpaper, flip switches, change bar and widget settings, add keybinds or autostart, theme apps, check health, update the system. Use whenever the user asks to change how their desktop looks or behaves, or asks how something on it works.
+description: Drive and customise this Archonate desktop (Hyprland on Arch/CachyOS) - switch rice, style, mode or wallpaper, flip switches, change bar settings, add keybinds or autostart, theme apps, check health, update the system. Use whenever the user asks to change how their desktop looks or behaves, or asks how something on it works.
 ---
 
 # Archonate
@@ -19,15 +19,15 @@ archonate status --json      # rice, style, mode, switches, the rice's settings,
 ## The model
 
 - **Rice**: a whole desktop (bar, fonts, corners, sounds, colours). Archonate ships
-  one, `archonate`: a notch bar over a line that ripples with music, plus desktop
-  widgets (visualizer, media card, clock, stats). A machine may still have older
+  one, `archonate`: a notch bar over a line that ripples with music, over a clean
+  desktop (no desktop widgets: just the wallpaper). A machine may still have older
   local rices (`archonate theme list`); they aren't part of Archonate.
 - **Style**: a colour scheme with its own wallpapers, worn by the rices listed in
   `styledRices` (each remembers its own). Downloaded dark themes, or one made from any
   image with `archonate style from <image>`.
-- **Mode**: `normal`, `gaming` (bar hides over fullscreen, widgets and effects off),
+- **Mode**: `normal`, `gaming` (bar hides over fullscreen, effects off),
   `minimal`.
-- **Switches**: nightlight, dnd, caffeine, gaming, widgets, shader, screensaver,
+- **Switches**: nightlight, dnd, caffeine, gaming, shader, screensaver,
   intros. `archonate toggle <name> [on|off]`.
 - **Settings**: per rice or global, live. Change them with `archonate settings set`
   (keys below), never by editing `settings.json`.
@@ -40,7 +40,6 @@ archonate status --json      # rice, style, mode, switches, the rice's settings,
 | colours from a picture | `archonate style from ~/Pictures/x.jpg` |
 | next wallpaper | `archonate wallpaper next` |
 | gaming mode | `archonate mode set gaming` |
-| desktop widgets on/off | `archonate toggle widgets on` |
 | seconds on the clock | `archonate settings set barSeconds true` |
 | a keybind, a layout, autostart | edit `~/.config/hypr/user.lua` (below) |
 | install an app | `archonate install <packages>` (curated lists: `archonate install <section>`) |
@@ -77,6 +76,36 @@ watching something.
   `active-rice.lua`, `active-mode.lua`, and the app themes Archonate writes: kitty
   `rice.conf`, GTK and Qt colours, btop, cava, Zed, Discord (`*/themes/archonate.theme.css`),
   Spotify, the Claude app theme, the zsh prompt.
+
+## Design language
+
+Everything Archonate dresses follows one design language, written down to the
+number in `~/.config/hypr/docs/DESIGN.md`. **Read that file before you style,
+restyle or theme anything** (an app, a panel, a page, a rice), and follow it
+exactly. In short:
+
+- **One background** (`bg`) on every surface. Panels sit flush, split by a
+  `borderWidth`-px hairline of `text` at 0.13 alpha. No floating cards, no
+  gaps, no gradients or album/brand colour washes.
+- **Neutral fills only** for state: hover is `text` at 0.05, selected/pressed
+  `text` at 0.09. Never accent fills, never side "selected" bars.
+- **The accent is for what is live**: focus (border plus a 3px glow at 0.18),
+  progress, now playing, links, unread. **Primary buttons are `text` with
+  `bg` labels**, not accent.
+- **Only menus, popovers and dialogs float**: `mix(bg, text, 0.06)`, a hairline
+  frame, radius 0.8R, shadow `0 12px 32px rgba(0,0,0,.35)`.
+- **Shape and type come from the rice** (`Theme.qml`, via `rice_look()`):
+  corners scale from R (0.6R rows and chips, 0.8R cards, inputs and menus,
+  1.0R dialogs); one font everywhere (mono for code); the rice's casing and
+  tracking on labels only, never on content.
+- **Never hard-code a colour or size**; derive it from the palette and look.
+- **Never modify an app's files** to theme it: use its theme mechanism, or a
+  runtime injection that leaves the install alone. Anchor on design tokens,
+  `data-*` attributes and stable class prefixes, never hashed classes.
+- **Restyle live** on every style switch. Wire new app themes into
+  `apply_apps` in `lib/desktop.py`, inside `safely(...)`.
+- Check a theme on a real screen with two very different styles, but never
+  while the user is gaming or watching something.
 
 ## Rules
 
